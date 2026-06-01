@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --background: 222 47% 5%;
+    --foreground: 210 40% 95%;
+    --card: 222 40% 8%;
+    --card-foreground: 210 40% 95%;
+    --popover: 222 40% 8%;
+    --popover-foreground: 210 40% 95%;
+    --primary: 43 65% 55%;
+    --primary-foreground: 222 47% 5%;
+    --secondary: 222 30% 14%;
+    --secondary-foreground: 210 40% 95%;
+    --muted: 222 30% 12%;
+    --muted-foreground: 215 20% 55%;
+    --accent: 222 30% 16%;
+    --accent-foreground: 210 40% 95%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 30% 15%;
+    --input: 222 30% 12%;
+    --ring: 43 65% 55%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background: radial-gradient(ellipse at 20% 0%, rgba(201, 168, 76, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(30, 45, 71, 0.4) 0%, transparent 50%),
+                hsl(222, 47%, 5%);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl;
+  }
+
+  .gold-gradient {
+    background: linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #9B7A2F 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .gold-border {
+    border-image: linear-gradient(135deg, #C9A84C, #9B7A2F) 1;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-muted-foreground hover:text-foreground hover:bg-accent/50;
+  }
+
+  .sidebar-item.active {
+    @apply text-foreground bg-accent border border-border/60;
+    box-shadow: inset 0 0 0 1px rgba(201, 168, 76, 0.15);
+  }
+
+  .chat-bubble-user {
+    @apply bg-primary/15 border border-primary/20 rounded-2xl rounded-br-sm px-4 py-3 text-sm;
+  }
+
+  .chat-bubble-ai {
+    @apply bg-card border border-border/60 rounded-2xl rounded-bl-sm px-4 py-3 text-sm;
+  }
+
+  .stat-card {
+    @apply glass-card p-5 flex flex-col gap-1.5 hover:border-border/80 transition-all duration-300;
+  }
+
+  .input-field {
+    @apply bg-input border border-border rounded-lg px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring transition-all w-full;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+
+/* Markdown in chat */
+.prose-finwise {
+  @apply text-sm text-foreground leading-relaxed;
+}
+.prose-finwise h1, .prose-finwise h2, .prose-finwise h3 {
+  @apply font-semibold text-foreground mt-4 mb-2;
+}
+.prose-finwise h1 { @apply text-lg; }
+.prose-finwise h2 { @apply text-base; }
+.prose-finwise h3 { @apply text-sm; }
+.prose-finwise p { @apply mb-3; }
+.prose-finwise ul { @apply list-disc list-inside mb-3 space-y-1; }
+.prose-finwise ol { @apply list-decimal list-inside mb-3 space-y-1; }
+.prose-finwise strong { @apply font-semibold text-gold; }
+.prose-finwise code { @apply bg-muted px-1.5 py-0.5 rounded text-xs font-mono; }
+.prose-finwise table { @apply w-full text-xs border-collapse mb-3; }
+.prose-finwise th { @apply border border-border px-2 py-1.5 bg-muted text-left font-semibold; }
+.prose-finwise td { @apply border border-border px-2 py-1.5; }
+.prose-finwise blockquote { @apply border-l-2 border-primary/60 pl-3 italic text-muted-foreground my-3; }
