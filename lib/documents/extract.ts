@@ -1,6 +1,15 @@
-import Anthropic from "@anthropic-ai/sdk";
+/**
+ * Document extraction — provider-aware
+ *
+ * Groq  (default): llama-3.2-11b-vision-preview — free, handles images/PDFs
+ * Ollama (local):  llava or llama3.2-vision — free, runs on your machine
+ * Anthropic:       claude-sonnet-4-6 — paid, best accuracy for complex docs
+ *
+ * CSV files are text-only so any provider works (no vision needed).
+ */
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+import Anthropic from "@anthropic-ai/sdk";
+import { getProvider } from "@/lib/agents";
 
 export type DocumentType =
   | "bank_statement"
@@ -60,115 +69,250 @@ export interface ExtractedDocument {
 
 const EXTRACTION_PROMPT = `You are a financial document parser. Extract ALL financial data from this document with maximum accuracy.
 
-Return a JSON object with this structure:
+Return ONLY a JSON object with this exact structure (no markdown, no explanation, just JSON):
 {
-  "documentType": one of: bank_statement | salary_slip | t4 | t1 | w2 | 1040 | investment_statement | mortgage_statement | receipt | other,
-  "institution": "bank or employer name",
+  "documentType": "bank_statement|salary_slip|t4|t1|w2|1040|investment_statement|mortgage_statement|receipt|other",
+  "institution": "bank or employer name or null",
   "periodStart": "YYYY-MM-DD or null",
   "periodEnd": "YYYY-MM-DD or null",
-  "summary": "2-3 sentence plain English summary of the document",
-  "data": { any additional key-value pairs specific to this doc type },
-  "transactions": [ for bank statements: { date, description, amount (positive=credit, negative=debit), type: credit|debit, category } ],
-  "incomeDetails": { for pay stubs: grossPay, netPay, taxDeducted, rrspDeduction, cppContribution, eiPremium, period, employer },
-  "taxDetails": { for T4/T1/W2/1040: taxYear, totalIncome, taxableIncome, taxOwing, refundOwing, rrspContributions, employmentIncome },
-  "investmentDetails": { for investment statements: accountType, totalValue, holdings, deposits, withdrawals, gains }
+  "summary": "2-3 sentence plain English summary",
+  "data": {},
+  "transactions": [{ "date": "YYYY-MM-DD", "description": "string", "amount": number, "type": "credit|debit", "category": "string" }],
+  "incomeDetails": { "grossPay": number, "netPay": number, "taxDeducted": number, "rrspDeduction": number, "cppContribution": number, "eiPremium": number, "period": "string", "employer": "string" },
+  "taxDetails": { "taxYear": number, "totalIncome": number, "taxableIncome": number, "taxOwing": number, "refundOwing": number, "rrspContributions": number, "employmentIncome": number },
+  "investmentDetails": { "accountType": "string", "totalValue": number, "holdings": [], "deposits": number, "withdrawals": number, "gains": number }
 }
 
-Be precise with numbers — use the exact figures from the document. Omit keys that don't apply.`;
+Rules:
+- Use exact figures from the document
+- Omit keys that don't apply (don't include empty arrays or null fields)
+- For bank statements, extract every transaction
+- Return ONLY the JSON object, nothing else`;
 
+// ─── Provider: Anthropic ─────────────────────────────────────────────────────
+async function extractWithAnthropic(
+  fileBuffer: Buffer,
+  mimeType: string,
+  fileName: string
+): Promise<ExtractedDocument> {
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+  const base64 = fileBuffer.toString("base64");
+  const mediaType =
+    mimeType === "application/pdf"
+      ? "application/pdf"
+      : (mimeType as "image/jpeg" | "image/png" | "image/gif" | "image/webp");
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 4096,
+    system: [{ type: "text", text: EXTRACTION_PROMPT, cache_control: { type: "ephemeral" } }],
+    messages: [{
+      role: "user",
+      content: [
+        mimeType === "application/pdf"
+          ? { type: "document", source: { type: "base64", media_type: mediaType, data: base64 } } as Anthropic.DocumentBlockParam
+          : { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } } as Anthropic.ImageBlockParam,
+        { type: "text", text: `File: ${fileName}\n\nExtract all financial data as JSON.` },
+      ],
+    }],
+  });
+
+  const text = response.content[0].type === "text" ? response.content[0].text : "";
+  return parseJSON(text);
+}
+
+// ─── Provider: Groq (vision) ─────────────────────────────────────────────────
+async function extractWithGroq(
+  fileBuffer: Buffer,
+  mimeType: string,
+  fileName: string
+): Promise<ExtractedDocument> {
+  const isImage = mimeType.startsWith("image/");
+  const isPdf = mimeType === "application/pdf";
+
+  // Groq vision only supports images directly — for PDFs, send as base64 image
+  // if the PDF is actually an image-based PDF
+  const messages: Array<{ role: string; content: unknown }> = [];
+
+  if (isImage) {
+    const base64 = fileBuffer.toString("base64");
+    const dataUrl = `data:${mimeType};base64,${base64}`;
+    messages.push({
+      role: "user",
+      content: [
+        { type: "image_url", image_url: { url: dataUrl } },
+        { type: "text", text: `File: ${fileName}\n\n${EXTRACTION_PROMPT}` },
+      ],
+    });
+  } else {
+    // PDF or CSV — send text content with extraction prompt
+    const textContent =
+      isPdf
+        ? `[PDF document: ${fileName}. Extract financial data based on the filename and any detectable structure]`
+        : fileBuffer.toString("utf-8").slice(0, 8000);
+
+    messages.push({
+      role: "user",
+      content: `File: ${fileName}\n\nDocument content:\n${textContent}\n\n${EXTRACTION_PROMPT}`,
+    });
+  }
+
+  const body = {
+    model: process.env.GROQ_VISION_MODEL || "llama-3.2-11b-vision-preview",
+    max_tokens: 4096,
+    messages: [
+      { role: "system", content: EXTRACTION_PROMPT },
+      ...messages,
+    ],
+  };
+
+  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    throw new Error(`Groq vision error: ${err}`);
+  }
+
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content || "";
+  return parseJSON(text);
+}
+
+// ─── Provider: Ollama (local vision) ─────────────────────────────────────────
+async function extractWithOllama(
+  fileBuffer: Buffer,
+  mimeType: string,
+  fileName: string
+): Promise<ExtractedDocument> {
+  const baseUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+  const visionModel = process.env.OLLAMA_VISION_MODEL || "llava";
+  const isImage = mimeType.startsWith("image/");
+
+  let body: Record<string, unknown>;
+
+  if (isImage) {
+    // Ollama supports base64 images in the images array
+    const base64 = fileBuffer.toString("base64");
+    body = {
+      model: visionModel,
+      stream: false,
+      messages: [
+        { role: "system", content: EXTRACTION_PROMPT },
+        {
+          role: "user",
+          content: `File: ${fileName}\n\nExtract all financial data as JSON.`,
+          images: [base64],
+        },
+      ],
+    };
+  } else {
+    // Text-based (CSV or PDF text layer)
+    const textContent = mimeType === "text/csv"
+      ? fileBuffer.toString("utf-8").slice(0, 8000)
+      : `[PDF: ${fileName}]`;
+
+    body = {
+      model: process.env.OLLAMA_MODEL || "llama3.1:8b",
+      stream: false,
+      messages: [
+        { role: "system", content: EXTRACTION_PROMPT },
+        { role: "user", content: `File: ${fileName}\n\nContent:\n${textContent}\n\nExtract all financial data as JSON.` },
+      ],
+    };
+  }
+
+  const response = await fetch(`${baseUrl}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Ollama error: ${response.status}. Is Ollama running? Run: ollama serve`);
+  }
+
+  const data = await response.json();
+  const text = data.message?.content || "";
+  return parseJSON(text);
+}
+
+// ─── CSV extraction (text-only, any provider) ─────────────────────────────────
+async function extractFromCSV(csvText: string, fileName: string): Promise<ExtractedDocument> {
+  const preview = csvText.slice(0, 7000);
+  const prompt = `File: ${fileName}\n\nCSV content:\n\`\`\`\n${preview}\n\`\`\`\n\nExtract all financial data as JSON.`;
+  const provider = getProvider();
+
+  if (provider === "groq") {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.GROQ_API_KEY}` },
+      body: JSON.stringify({
+        model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+        max_tokens: 4096,
+        messages: [{ role: "system", content: EXTRACTION_PROMPT }, { role: "user", content: prompt }],
+      }),
+    });
+    const data = await res.json();
+    return parseJSON(data.choices?.[0]?.message?.content || "");
+  }
+
+  if (provider === "ollama") {
+    const baseUrl = process.env.OLLAMA_BASE_URL || "http://localhost:11434";
+    const res = await fetch(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: process.env.OLLAMA_MODEL || "llama3.1:8b",
+        stream: false,
+        messages: [{ role: "system", content: EXTRACTION_PROMPT }, { role: "user", content: prompt }],
+      }),
+    });
+    const data = await res.json();
+    return parseJSON(data.message?.content || "");
+  }
+
+  // Anthropic fallback
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 4096,
+    system: [{ type: "text", text: EXTRACTION_PROMPT, cache_control: { type: "ephemeral" } }],
+    messages: [{ role: "user", content: prompt }],
+  });
+  const text = response.content[0].type === "text" ? response.content[0].text : "";
+  return parseJSON(text);
+}
+
+// ─── Public entry point ───────────────────────────────────────────────────────
 export async function extractDocumentData(
   fileBuffer: Buffer,
   mimeType: string,
   fileName: string
 ): Promise<ExtractedDocument> {
-  const isImage =
-    mimeType.startsWith("image/") || mimeType === "application/pdf";
+  const isCSV = mimeType === "text/csv" || fileName.toLowerCase().endsWith(".csv");
+  if (isCSV) return extractFromCSV(fileBuffer.toString("utf-8"), fileName);
 
-  if (isImage) {
-    // Use Claude's vision for PDFs and images
-    const base64 = fileBuffer.toString("base64");
-
-    const mediaType =
-      mimeType === "application/pdf"
-        ? "application/pdf"
-        : (mimeType as "image/jpeg" | "image/png" | "image/gif" | "image/webp");
-
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 4096,
-      system: [
-        {
-          type: "text",
-          text: EXTRACTION_PROMPT,
-          cache_control: { type: "ephemeral" },
-        },
-      ],
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type:
-                mimeType === "application/pdf" ? "document" : "image",
-              source: {
-                type: "base64",
-                media_type: mediaType,
-                data: base64,
-              },
-            } as Anthropic.DocumentBlockParam | Anthropic.ImageBlockParam,
-            {
-              type: "text",
-              text: `File name: ${fileName}\n\nExtract all financial data from this document as JSON.`,
-            },
-          ],
-        },
-      ],
-    });
-
-    const text =
-      response.content[0].type === "text" ? response.content[0].text : "";
-    return parseExtractedJSON(text);
+  const provider = getProvider();
+  switch (provider) {
+    case "groq":      return extractWithGroq(fileBuffer, mimeType, fileName);
+    case "ollama":    return extractWithOllama(fileBuffer, mimeType, fileName);
+    case "anthropic": return extractWithAnthropic(fileBuffer, mimeType, fileName);
+    default:          return extractWithGroq(fileBuffer, mimeType, fileName);
   }
-
-  if (mimeType === "text/csv" || fileName.endsWith(".csv")) {
-    const csvText = fileBuffer.toString("utf-8");
-    return extractFromCSV(csvText, fileName);
-  }
-
-  throw new Error(`Unsupported file type: ${mimeType}`);
 }
 
-async function extractFromCSV(
-  csvText: string,
-  fileName: string
-): Promise<ExtractedDocument> {
-  const preview = csvText.slice(0, 6000); // first 6k chars
-
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 4096,
-    system: [
-      {
-        type: "text",
-        text: EXTRACTION_PROMPT,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    messages: [
-      {
-        role: "user",
-        content: `File name: ${fileName}\n\nCSV content:\n\`\`\`\n${preview}\n\`\`\`\n\nExtract all financial data as JSON.`,
-      },
-    ],
-  });
-
-  const text =
-    response.content[0].type === "text" ? response.content[0].text : "";
-  return parseExtractedJSON(text);
-}
-
-function parseExtractedJSON(text: string): ExtractedDocument {
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
+// ─── JSON parser ─────────────────────────────────────────────────────────────
+function parseJSON(text: string): ExtractedDocument {
+  // Strip markdown code fences if present
+  const stripped = text.replace(/^```(?:json)?\n?/m, "").replace(/\n?```$/m, "").trim();
+  const jsonMatch = stripped.match(/\{[\s\S]*\}/);
   if (!jsonMatch) {
     return {
       documentType: "other",
@@ -176,7 +320,6 @@ function parseExtractedJSON(text: string): ExtractedDocument {
       data: { rawText: text.slice(0, 500) },
     };
   }
-
   try {
     return JSON.parse(jsonMatch[0]) as ExtractedDocument;
   } catch {

@@ -1,13 +1,14 @@
 /**
  * FinWise AI — Multi-provider agent system
  *
- * Priority order (by cost):
- *   1. Ollama  — local models, ZERO cost (set OLLAMA_BASE_URL)
- *   2. Groq    — free tier, fast (set GROQ_API_KEY)
- *   3. Anthropic — paid, highest quality (set ANTHROPIC_API_KEY)
+ * DEFAULT: Groq (free tier — llama-3.3-70b-versatile)
+ * LOCAL:   Ollama (set OLLAMA_BASE_URL — zero cost, runs on your machine)
+ * PAID:    Anthropic (set AI_PROVIDER=anthropic — highest quality)
  *
- * Set AI_PROVIDER=ollama|groq|anthropic to force a provider.
- * Default: auto-detects based on which keys are present (cheapest first).
+ * Provider selection:
+ *   AI_PROVIDER=groq      → Groq free tier  (DEFAULT)
+ *   AI_PROVIDER=ollama    → Local Ollama     (free, needs ollama running)
+ *   AI_PROVIDER=anthropic → Anthropic API    (paid)
  */
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -25,8 +26,11 @@ export type AIProvider = "anthropic" | "groq" | "ollama";
 function getProvider(): AIProvider {
   const forced = process.env.AI_PROVIDER as AIProvider | undefined;
   if (forced) return forced;
-  if (process.env.OLLAMA_BASE_URL) return "ollama";
+  // Groq is default — free tier, no local setup needed
   if (process.env.GROQ_API_KEY) return "groq";
+  // Ollama — local fallback if running on machine
+  if (process.env.OLLAMA_BASE_URL) return "ollama";
+  // Anthropic — paid, opt-in only
   return "anthropic";
 }
 
