@@ -17,7 +17,7 @@ const TAX_SUGGESTIONS = [
 ];
 
 export default async function TaxPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 

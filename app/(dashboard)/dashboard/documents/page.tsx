@@ -7,7 +7,7 @@ import { BankConnect } from "@/components/documents/bank-connect";
 import { DocumentLibrary } from "@/components/documents/document-library";
 
 export default async function DocumentsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

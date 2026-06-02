@@ -8,7 +8,7 @@ import {
 import { formatCurrency, calculateNetWorth, getFinancialHealthScore } from "@/lib/utils";
 
 export default async function DashboardPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 

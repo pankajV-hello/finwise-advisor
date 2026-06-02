@@ -17,7 +17,7 @@ const FINANCIAL_SUGGESTIONS = [
 ];
 
 export default async function FinancialPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 

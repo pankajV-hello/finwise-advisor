@@ -16,7 +16,7 @@ const MORTGAGE_SUGGESTIONS = [
 ];
 
 export default async function MortgagePage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 

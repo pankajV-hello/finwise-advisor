@@ -14,7 +14,7 @@ const GOALS_SUGGESTIONS = [
 ];
 
 export default async function GoalsPage() {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 

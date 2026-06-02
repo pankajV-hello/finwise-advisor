@@ -3,9 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createClient();
+  const { id } = await params;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -17,7 +18,7 @@ export async function DELETE(
   const { data: doc } = await supabase
     .from("documents")
     .select("storage_path")
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("user_id", user.id)
     .single();
 
@@ -26,16 +27,17 @@ export async function DELETE(
   }
 
   await supabase.storage.from("financial-docs").remove([doc.storage_path]);
-  await supabase.from("documents").delete().eq("id", params.id);
+  await supabase.from("documents").delete().eq("id", id);
 
   return NextResponse.json({ success: true });
 }
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = createClient();
+  const { id } = await params;
+  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -47,7 +49,7 @@ export async function GET(
   const { data: doc } = await supabase
     .from("documents")
     .select("*")
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("user_id", user.id)
     .single();
 

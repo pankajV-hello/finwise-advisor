@@ -16,7 +16,7 @@ const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
