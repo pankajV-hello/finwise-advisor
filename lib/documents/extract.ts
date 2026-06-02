@@ -1,12 +1,17 @@
 /**
  * Document extraction — provider-aware
  *
- * PDFs   → pdf-parse (text) → Groq/Ollama/Anthropic text model (most reliable)
- * Images → Groq vision / Ollama llava / Anthropic vision
- * CSV    → text model on any provider
+ * PDFs (text layer) → pdf-parse → text model
+ * PDFs (scanned)    → sips (macOS) or sharp → render to JPEG → vision model
+ * Images            → vision model
+ * CSV               → text model
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import { execSync } from "child_process";
+import * as fs from "fs";
+import * as os from "os";
+import * as path from "path";
 import { getProvider } from "@/lib/agents";
 
 export type DocumentType =
@@ -63,12 +68,36 @@ Rules: exact figures only, omit inapplicable keys, return ONLY the JSON object.`
 // ─── PDF text extraction ──────────────────────────────────────────────────────
 async function extractPdfText(buffer: Buffer): Promise<string> {
   try {
-    // Dynamic import to avoid edge runtime issues
     const pdfParse = (await import("pdf-parse")).default;
     const data = await pdfParse(buffer);
     return data.text?.slice(0, 10000) || "";
   } catch {
     return "";
+  }
+}
+
+// ─── Scanned PDF → JPEG via macOS sips ───────────────────────────────────────
+function renderPdfToImage(buffer: Buffer): Buffer | null {
+  const tmpDir = os.tmpdir();
+  const pdfPath = path.join(tmpDir, `fw_${Date.now()}.pdf`);
+  const imgPath = path.join(tmpDir, `fw_${Date.now()}.jpg`);
+  try {
+    fs.writeFileSync(pdfPath, buffer);
+    // sips is macOS built-in — renders first page of PDF to JPEG
+    execSync(
+      `sips -s format jpeg -s dpiHeight 150 -s dpiWidth 150 "${pdfPath}" --out "${imgPath}"`,
+      { timeout: 15000, stdio: "pipe" }
+    );
+    if (fs.existsSync(imgPath)) {
+      const img = fs.readFileSync(imgPath);
+      return img;
+    }
+    return null;
+  } catch {
+    return null;
+  } finally {
+    if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+    if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
   }
 }
 
@@ -217,18 +246,26 @@ export async function extractDocumentData(
   }
 
   if (isPDF) {
-    // Always extract PDF as text — more reliable than vision for payslips/statements
+    // Try text layer first (fast, accurate for digital PDFs)
     const pdfText = await extractPdfText(fileBuffer);
-    if (pdfText.trim().length > 50) {
+    if (pdfText.trim().length > 80) {
       return extractWithText(pdfText, fileName);
     }
-    // If text extraction yields nothing (scanned PDF), fall through to vision
-    if (isImage || mimeType === "application/pdf") {
-      return extractWithText(
-        `[Scanned PDF: ${fileName} — could not extract text. Please describe the document type and any visible figures.]`,
-        fileName
-      );
+
+    // Scanned PDF — render to image via sips (macOS) then send to vision
+    console.log("Scanned PDF detected — rendering to image via sips...");
+    const imgBuffer = renderPdfToImage(fileBuffer);
+    if (imgBuffer) {
+      return extractWithVision(imgBuffer, "image/jpeg", fileName);
     }
+
+    // Final fallback — ask the model to guess from filename only
+    return extractWithText(
+      `Scanned PDF document named: ${fileName}. ` +
+      `Based on the filename, extract what financial data you can infer and set documentType appropriately. ` +
+      `Set summary to explain this is a scanned document that could not be rendered.`,
+      fileName
+    );
   }
 
   if (isImage) {
