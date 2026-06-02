@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { extractDocumentData } from "@/lib/documents/extract";
 
 const ALLOWED_TYPES = [
@@ -44,9 +45,10 @@ export async function POST(req: NextRequest) {
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const storagePath = `${user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
 
-    // ── Try storage — skip gracefully if bucket not set up yet ──────────────
+    // ── Use admin client for storage (bypasses RLS) ──────────────────────────
+    const admin = createAdminClient();
     let storageOk = false;
-    const { error: storageError } = await supabase.storage
+    const { error: storageError } = await admin.storage
       .from("financial-docs")
       .upload(storagePath, fileBuffer, { contentType: mimeType, upsert: false });
 
