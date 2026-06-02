@@ -138,7 +138,7 @@ export function SettingsForm({ userId, profile, financialProfile }: {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full h-10 rounded-lg font-semibold text-sm text-navy-950 bg-gradient-to-r from-gold-dark via-gold to-gold-light hover:brightness-110 disabled:opacity-60 transition-all flex items-center justify-center gap-2 shadow-md shadow-gold/20"
+        className="w-full h-10 rounded-lg font-semibold text-sm text-white bg-gradient-to-r from-primary via-primary to-sky hover:brightness-110 disabled:opacity-60 transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/25"
       >
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <CheckCircle className="w-4 h-4" /> : <Save className="w-4 h-4" />}
         {saving ? "Saving…" : saved ? "Saved!" : "Save Settings"}

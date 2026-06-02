@@ -40,21 +40,21 @@ const DOC_TYPE_CONFIG: Record<
   bank_statement: {
     label: "Bank Statement",
     icon: Building2,
-    color: "text-blue-400",
+    color: "text-blue-600",
   },
   salary_slip: {
     label: "Salary / Pay Slip",
     icon: Briefcase,
-    color: "text-green-400",
+    color: "text-green-600",
   },
-  t4: { label: "T4 Slip", icon: Receipt, color: "text-yellow-400" },
-  t1: { label: "T1 Return", icon: Receipt, color: "text-yellow-400" },
-  w2: { label: "W-2 Form", icon: Receipt, color: "text-orange-400" },
-  "1040": { label: "1040 Tax Return", icon: Receipt, color: "text-orange-400" },
+  t4: { label: "T4 Slip", icon: Receipt, color: "text-amber-500" },
+  t1: { label: "T1 Return", icon: Receipt, color: "text-amber-500" },
+  w2: { label: "W-2 Form", icon: Receipt, color: "text-orange-500" },
+  "1040": { label: "1040 Tax Return", icon: Receipt, color: "text-orange-500" },
   investment_statement: {
     label: "Investment Statement",
     icon: TrendingUp,
-    color: "text-purple-400",
+    color: "text-purple-600",
   },
   mortgage_statement: {
     label: "Mortgage Statement",
@@ -105,7 +105,7 @@ function ExtractionResult({
           {extracted.incomeDetails.grossPay !== undefined && (
             <div className="text-center">
               <div className="text-xs text-muted-foreground">Gross Pay</div>
-              <div className="text-xs font-semibold text-green-400">
+              <div className="text-xs font-semibold text-green-600">
                 {formatCurrency(extracted.incomeDetails.grossPay)}
               </div>
             </div>
@@ -113,7 +113,7 @@ function ExtractionResult({
           {extracted.incomeDetails.taxDeducted !== undefined && (
             <div className="text-center">
               <div className="text-xs text-muted-foreground">Tax Deducted</div>
-              <div className="text-xs font-semibold text-red-400">
+              <div className="text-xs font-semibold text-red-500">
                 {formatCurrency(extracted.incomeDetails.taxDeducted)}
               </div>
             </div>
@@ -144,7 +144,7 @@ function ExtractionResult({
           extracted.taxDetails.taxOwing >= 0 ? (
             <div className="text-center">
               <div className="text-xs text-muted-foreground">Tax Owing</div>
-              <div className="text-xs font-semibold text-red-400">
+              <div className="text-xs font-semibold text-red-500">
                 {formatCurrency(extracted.taxDetails.taxOwing)}
               </div>
             </div>
@@ -153,7 +153,7 @@ function ExtractionResult({
           extracted.taxDetails.refundOwing > 0 ? (
             <div className="text-center">
               <div className="text-xs text-muted-foreground">Refund</div>
-              <div className="text-xs font-semibold text-green-400">
+              <div className="text-xs font-semibold text-green-600">
                 {formatCurrency(extracted.taxDetails.refundOwing)}
               </div>
             </div>
@@ -163,7 +163,7 @@ function ExtractionResult({
 
       {/* Transaction import */}
       {transactionsImported > 0 && (
-        <div className="flex items-center gap-1.5 text-xs text-green-400">
+        <div className="flex items-center gap-1.5 text-xs text-green-600">
           <CheckCircle className="w-3.5 h-3.5" />
           {transactionsImported} transactions imported to Bookkeeper
         </div>
@@ -361,10 +361,10 @@ export function DocumentUploader({ onUploaded }: DocumentUploaderProps) {
                           </div>
                         )}
                         {upload.status === "done" && (
-                          <CheckCircle className="w-4 h-4 text-green-400" />
+                          <CheckCircle className="w-4 h-4 text-green-600" />
                         )}
                         {upload.status === "error" && (
-                          <AlertCircle className="w-4 h-4 text-red-400" />
+                          <AlertCircle className="w-4 h-4 text-red-500" />
                         )}
                         <button
                           onClick={(e) => {
@@ -379,7 +379,7 @@ export function DocumentUploader({ onUploaded }: DocumentUploaderProps) {
                     </div>
 
                     {upload.status === "error" && (
-                      <p className="text-xs text-red-400 mt-1">
+                      <p className="text-xs text-red-500 mt-1">
                         {upload.error}
                       </p>
                     )}

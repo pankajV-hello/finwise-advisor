@@ -40,13 +40,27 @@ const config: Config = {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         gold: {
-          DEFAULT: "#C9A84C",
-          light: "#E8C97A",
-          dark: "#9B7A2F",
+          DEFAULT: "#F2B33D",
+          light: "#FCD06A",
+          dark: "#D9971F",
+        },
+        lime: {
+          DEFAULT: "#66B539",
+          light: "#8FD45F",
+          dark: "#4E9128",
+        },
+        sky: {
+          DEFAULT: "#38BDF8",
+          light: "#7DD3FC",
+          dark: "#0EA5E9",
         },
         navy: {
           50: "#E8EBF0",
@@ -68,8 +82,8 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-        display: ["var(--font-playfair)", "Georgia", "serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["Plus Jakarta Sans", "Inter", "sans-serif"],
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",

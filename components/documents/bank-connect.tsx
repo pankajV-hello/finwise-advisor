@@ -212,7 +212,7 @@ export function BankConnect({ connections = [], defaultCountry = "AU" }: BankCon
                   <button className="p-1.5 rounded-lg hover:bg-accent text-muted-foreground hover:text-foreground transition-colors">
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
-                  <button className="p-1.5 rounded-lg hover:bg-accent text-red-400 hover:text-red-300 transition-colors">
+                  <button className="p-1.5 rounded-lg hover:bg-accent text-red-500 hover:text-red-300 transition-colors">
                     <Unlink className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -238,7 +238,7 @@ export function BankConnect({ connections = [], defaultCountry = "AU" }: BankCon
               <span className="text-xs px-2 py-1 rounded-full bg-secondary border border-border/60 text-muted-foreground">
                 {ob.free}
               </span>
-              <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-400">
+              <span className="text-xs px-2 py-1 rounded-full bg-green-500/10 border border-green-500/20 text-green-600">
                 Read-only access
               </span>
               <span className="text-xs px-2 py-1 rounded-full bg-secondary border border-border/60 text-muted-foreground">
@@ -249,7 +249,7 @@ export function BankConnect({ connections = [], defaultCountry = "AU" }: BankCon
             <button
               onClick={handleLiveConnect}
               disabled={connecting}
-              className="w-full max-w-xs mx-auto h-10 rounded-lg font-semibold text-sm text-navy-950 bg-gradient-to-r from-gold-dark via-gold to-gold-light hover:brightness-110 disabled:opacity-60 transition-all flex items-center justify-center gap-2 shadow-md shadow-gold/20"
+              className="w-full max-w-xs mx-auto h-10 rounded-lg font-semibold text-sm text-white bg-gradient-to-r from-primary via-primary to-sky hover:brightness-110 disabled:opacity-60 transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/25"
             >
               {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
               Connect via {ob.provider}

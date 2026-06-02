@@ -114,7 +114,7 @@ export function GoalsManager({ userId, goals: initial }: { userId: string; goals
                 </div>
                 <button
                   onClick={() => handleDelete(goal.id)}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-red-400 transition-all"
+                  className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-red-500 transition-all"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -122,7 +122,7 @@ export function GoalsManager({ userId, goals: initial }: { userId: string; goals
               <Progress
                 value={pct}
                 className="h-1.5 mb-2"
-                indicatorClassName="bg-gradient-to-r from-gold-dark to-gold"
+                indicatorClassName="bg-gradient-to-r from-primary to-sky"
               />
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">{formatCurrency(goal.current_amount)}</span>

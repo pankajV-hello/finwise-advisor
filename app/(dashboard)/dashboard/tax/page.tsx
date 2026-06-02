@@ -4,6 +4,7 @@ import { Receipt, Plus, FileText } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { AIChat } from "@/components/chat/ai-chat";
 import { TaxProfileForm } from "@/components/tax/tax-profile-form";
+import { AdviceWarning } from "@/components/legal/advice-warning";
 import { formatCurrency } from "@/lib/utils";
 
 const TAX_SUGGESTIONS = [
@@ -48,6 +49,8 @@ export default async function TaxPage() {
         icon={<Receipt className="w-5 h-5" />}
       />
 
+      <AdviceWarning country={profile?.country || "AU"} className="mb-4" />
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-200px)]">
         {/* Left: Tax profile form + summary */}
         <div className="lg:col-span-2 space-y-4 overflow-y-auto">
@@ -62,7 +65,7 @@ export default async function TaxPage() {
               </div>
               <div className="stat-card">
                 <p className="text-xs text-muted-foreground">RRSP Contributions</p>
-                <p className="text-lg font-bold text-green-400">
+                <p className="text-lg font-bold text-green-600">
                   {formatCurrency(taxProfile.rrsp_contributions || 0)}
                 </p>
               </div>
@@ -95,7 +98,7 @@ export default async function TaxPage() {
         {/* Right: AI Chat */}
         <div className="lg:col-span-3 glass-card overflow-hidden flex flex-col">
           <div className="px-4 pt-4 pb-2 border-b border-border/40 flex items-center gap-2">
-            <Receipt className="w-4 h-4 text-yellow-400" />
+            <Receipt className="w-4 h-4 text-amber-500" />
             <span className="text-sm font-semibold">Tax Advisor AI</span>
             <span className="text-xs text-muted-foreground ml-auto">CRA & IRS expertise</span>
           </div>

@@ -6,12 +6,12 @@ import {
 
 export default function LandingPage() {
   const features = [
-    { icon: Receipt, label: "Tax Advisor", desc: "T4, RRSP, TFSA, capital gains — CRA & IRS expertise", color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/20" },
-    { icon: TrendingUp, label: "Financial Advice", desc: "Investment strategy, retirement planning, wealth building", color: "text-green-400", bg: "bg-green-400/10 border-green-400/20" },
-    { icon: Home, label: "Mortgage Advisor", desc: "Amortization, refinancing, stress test, rate comparisons", color: "text-blue-400", bg: "bg-blue-400/10 border-blue-400/20" },
-    { icon: BookOpen, label: "AI Bookkeeper", desc: "Expenses, income, P&L reports, tax-deductible tracking", color: "text-purple-400", bg: "bg-purple-400/10 border-purple-400/20" },
-    { icon: FileText, label: "Document Analysis", desc: "Upload bank statements, pay slips, tax forms — auto-extracted by AI", color: "text-cyan-400", bg: "bg-cyan-400/10 border-cyan-400/20" },
-    { icon: Link2, label: "Bank Connect", desc: "Live bank feeds via Plaid — 12,000+ banks in Canada & US", color: "text-orange-400", bg: "bg-orange-400/10 border-orange-400/20" },
+    { icon: Receipt, label: "Tax Advisor", desc: "T4, RRSP, TFSA, capital gains — CRA & IRS expertise", color: "text-amber-500", bg: "bg-yellow-400/10 border-yellow-400/20" },
+    { icon: TrendingUp, label: "Financial Advice", desc: "Investment strategy, retirement planning, wealth building", color: "text-green-600", bg: "bg-green-400/10 border-green-400/20" },
+    { icon: Home, label: "Mortgage Advisor", desc: "Amortization, refinancing, stress test, rate comparisons", color: "text-blue-600", bg: "bg-blue-400/10 border-blue-400/20" },
+    { icon: BookOpen, label: "AI Bookkeeper", desc: "Expenses, income, P&L reports, tax-deductible tracking", color: "text-purple-600", bg: "bg-purple-400/10 border-purple-400/20" },
+    { icon: FileText, label: "Document Analysis", desc: "Upload bank statements, pay slips, tax forms — auto-extracted by AI", color: "text-cyan-600", bg: "bg-cyan-400/10 border-cyan-400/20" },
+    { icon: Link2, label: "Bank Connect", desc: "Live bank feeds via Plaid — 12,000+ banks in Canada & US", color: "text-orange-500", bg: "bg-orange-400/10 border-orange-400/20" },
   ];
 
   return (
@@ -20,8 +20,8 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold-dark to-gold flex items-center justify-center shadow-lg shadow-gold/20">
-              <Sparkles className="w-4 h-4 text-navy-950" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-sky flex items-center justify-center shadow-lg shadow-primary/25">
+              <Sparkles className="w-4 h-4 text-white" />
             </div>
             <span className="font-display font-bold text-lg gold-gradient">FinWise AI</span>
           </div>
@@ -62,7 +62,7 @@ export default function LandingPage() {
         <div className="flex flex-col sm:flex-row gap-3 mb-16">
           <Link
             href="/auth/signup"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-navy-950 bg-gradient-to-r from-gold-dark via-gold to-gold-light hover:brightness-110 transition-all shadow-lg shadow-gold/20"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-white bg-gradient-to-r from-primary via-primary to-sky hover:brightness-110 transition-all shadow-lg shadow-primary/25"
           >
             Start for free <ArrowRight className="w-4 h-4" />
           </Link>
@@ -78,7 +78,7 @@ export default function LandingPage() {
         <div className="flex flex-wrap gap-6 justify-center text-xs text-muted-foreground">
           {["Bank-grade encryption", "ATO · IRD · CRA · IRS", "12,000+ banks supported", "AU · NZ · CA · US"].map(t => (
             <span key={t} className="flex items-center gap-1.5">
-              <CheckCircle className="w-3.5 h-3.5 text-green-400" /> {t}
+              <CheckCircle className="w-3.5 h-3.5 text-green-600" /> {t}
             </span>
           ))}
         </div>
@@ -106,7 +106,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t border-border/40 py-8 text-center text-xs text-muted-foreground">
         <div className="flex items-center justify-center gap-2 mb-2">
-          <Shield className="w-3.5 h-3.5 text-green-400" />
+          <Shield className="w-3.5 h-3.5 text-green-600" />
           <span>Your data is encrypted and never shared. FinWise AI is not a registered financial advisor.</span>
         </div>
         <p>Always consult a licensed professional for major financial decisions.</p>

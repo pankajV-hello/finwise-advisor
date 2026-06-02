@@ -34,8 +34,8 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gold-dark to-gold flex items-center justify-center mx-auto mb-4 shadow-lg shadow-gold/20">
-            <Sparkles className="w-6 h-6 text-navy-950" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-sky flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/25">
+            <Sparkles className="w-6 h-6 text-white" />
           </div>
           <h1 className="text-2xl font-display font-bold gold-gradient">FinWise AI</h1>
           <p className="text-sm text-muted-foreground mt-1">Sign in to your account</p>
@@ -86,7 +86,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-10 rounded-lg font-semibold text-sm text-navy-950 bg-gradient-to-r from-gold-dark via-gold to-gold-light hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-md shadow-gold/20"
+              className="w-full h-10 rounded-lg font-semibold text-sm text-white bg-gradient-to-r from-primary via-primary to-sky hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-md shadow-primary/25"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {loading ? "Signing in…" : "Sign in"}

@@ -65,13 +65,16 @@ Return ONLY a valid JSON object (no markdown, no explanation):
 
 Rules: exact figures only, omit inapplicable keys, return ONLY the JSON object.`;
 
-// ─── PDF text extraction ──────────────────────────────────────────────────────
+// ─── PDF text extraction (pdf-parse v2 — PDFParse class) ─────────────────────
 async function extractPdfText(buffer: Buffer): Promise<string> {
   try {
-    const pdfParse = (await import("pdf-parse")).default;
-    const data = await pdfParse(buffer);
-    return data.text?.slice(0, 10000) || "";
-  } catch {
+    const { PDFParse } = await import("pdf-parse");
+    const parser = new PDFParse({ data: new Uint8Array(buffer) });
+    const result = await parser.getText();
+    await parser.destroy();
+    return result.text?.slice(0, 10000) || "";
+  } catch (err) {
+    console.warn("PDF text extraction failed:", err instanceof Error ? err.message : err);
     return "";
   }
 }

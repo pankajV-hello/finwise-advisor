@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { TrendingUp, PlusCircle } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
+import { AdviceWarning } from "@/components/legal/advice-warning";
 import { AIChat } from "@/components/chat/ai-chat";
 import { AccountsManager } from "@/components/financial/accounts-manager";
 import { formatCurrency, calculateNetWorth } from "@/lib/utils";
@@ -20,9 +21,10 @@ export default async function FinancialPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const [{ data: accounts }, { data: financialProfile }] = await Promise.all([
+  const [{ data: accounts }, { data: financialProfile }, { data: profile }] = await Promise.all([
     supabase.from("accounts").select("*").eq("user_id", user.id).order("is_asset", { ascending: false }),
     supabase.from("financial_profiles").select("*").eq("user_id", user.id).single(),
+    supabase.from("profiles").select("country").eq("id", user.id).single(),
   ]);
 
   const nw = accounts ? calculateNetWorth(accounts) : { assets: 0, liabilities: 0, netWorth: 0 };
@@ -46,6 +48,8 @@ export default async function FinancialPage() {
         icon={<TrendingUp className="w-5 h-5" />}
       />
 
+      <AdviceWarning country={profile?.country || "AU"} className="mb-4" />
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-200px)]">
         {/* Left: Accounts */}
         <div className="lg:col-span-2 space-y-4 overflow-y-auto">
@@ -57,11 +61,11 @@ export default async function FinancialPage() {
             </div>
             <div className="stat-card">
               <p className="text-xs text-muted-foreground">Assets</p>
-              <p className="text-base font-bold text-green-400">{formatCurrency(nw.assets)}</p>
+              <p className="text-base font-bold text-green-600">{formatCurrency(nw.assets)}</p>
             </div>
             <div className="stat-card">
               <p className="text-xs text-muted-foreground">Liabilities</p>
-              <p className="text-base font-bold text-red-400">{formatCurrency(nw.liabilities)}</p>
+              <p className="text-base font-bold text-red-500">{formatCurrency(nw.liabilities)}</p>
             </div>
           </div>
 
@@ -78,7 +82,7 @@ export default async function FinancialPage() {
         {/* Right: AI Chat */}
         <div className="lg:col-span-3 glass-card overflow-hidden flex flex-col">
           <div className="px-4 pt-4 pb-2 border-b border-border/40 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-green-400" />
+            <TrendingUp className="w-4 h-4 text-green-600" />
             <span className="text-sm font-semibold">Financial Advisor AI</span>
             <span className="text-xs text-muted-foreground ml-auto">CFP expertise</span>
           </div>

@@ -14,11 +14,17 @@ export default async function DashboardLayout({
 
   if (!user) redirect("/auth/login");
 
+  // select("*") so a missing onboarding column (pre-migration) doesn't error
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, email")
+    .select("*")
     .eq("id", user.id)
     .single();
+
+  // New users go through onboarding first (only if the column exists & is false)
+  if (profile && profile.onboarding_completed === false) {
+    redirect("/onboarding");
+  }
 
   return (
     <div className="min-h-screen flex">

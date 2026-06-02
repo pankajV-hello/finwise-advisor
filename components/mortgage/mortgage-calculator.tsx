@@ -133,7 +133,7 @@ export function MortgageCalculator({ userId, existingMortgage }: { userId: strin
           <div className="grid grid-cols-2 gap-2">
             <div className="p-3 rounded-lg bg-accent/50 text-center">
               <p className="text-xs text-muted-foreground">Total Interest</p>
-              <p className="text-sm font-bold text-red-400">{formatCurrency(result.totalInterest)}</p>
+              <p className="text-sm font-bold text-red-500">{formatCurrency(result.totalInterest)}</p>
             </div>
             <div className="p-3 rounded-lg bg-accent/50 text-center">
               <p className="text-xs text-muted-foreground">Total Paid</p>
@@ -160,8 +160,8 @@ export function MortgageCalculator({ userId, existingMortgage }: { userId: strin
                 {schedule.map(row => (
                   <div key={row.year} className="grid grid-cols-4 text-xs px-3 py-1.5 border-t border-border/40 hover:bg-accent/30">
                     <span className="text-muted-foreground">Yr {row.year}</span>
-                    <span className="text-right text-green-400">{formatCurrency(row.principal)}</span>
-                    <span className="text-right text-red-400">{formatCurrency(row.interest)}</span>
+                    <span className="text-right text-green-600">{formatCurrency(row.principal)}</span>
+                    <span className="text-right text-red-500">{formatCurrency(row.interest)}</span>
                     <span className="text-right">{formatCurrency(row.balance)}</span>
                   </div>
                 ))}

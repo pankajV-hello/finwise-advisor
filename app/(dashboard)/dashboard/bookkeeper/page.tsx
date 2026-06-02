@@ -4,6 +4,7 @@ import { BookOpen } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { AIChat } from "@/components/chat/ai-chat";
 import { TransactionManager } from "@/components/bookkeeper/transaction-manager";
+import { AdviceWarning } from "@/components/legal/advice-warning";
 import { formatCurrency } from "@/lib/utils";
 
 const BOOKKEEPER_SUGGESTIONS = [
@@ -23,10 +24,11 @@ export default async function BookkeeperPage() {
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
 
-  const [{ data: transactions }, { data: categories }] = await Promise.all([
+  const [{ data: transactions }, { data: categories }, { data: profile }] = await Promise.all([
     supabase.from("transactions").select("*").eq("user_id", user.id)
       .gte("date", firstOfMonth).order("date", { ascending: false }),
     supabase.from("categories").select("*").eq("user_id", user.id).order("type").order("name"),
+    supabase.from("profiles").select("country").eq("id", user.id).single(),
   ]);
 
   // Calculate monthly totals
@@ -59,21 +61,23 @@ export default async function BookkeeperPage() {
         icon={<BookOpen className="w-5 h-5" />}
       />
 
+      <AdviceWarning country={profile?.country || "AU"} className="mb-4" />
+
       {/* Monthly summary */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="stat-card">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Income</p>
-          <p className="text-2xl font-bold text-green-400">{formatCurrency(income)}</p>
+          <p className="text-2xl font-bold text-green-600">{formatCurrency(income)}</p>
           <p className="text-xs text-muted-foreground mt-1">This month</p>
         </div>
         <div className="stat-card">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Expenses</p>
-          <p className="text-2xl font-bold text-red-400">{formatCurrency(expenses)}</p>
+          <p className="text-2xl font-bold text-red-500">{formatCurrency(expenses)}</p>
           <p className="text-xs text-muted-foreground mt-1">This month</p>
         </div>
         <div className="stat-card">
           <p className="text-xs text-muted-foreground uppercase tracking-wider">Net</p>
-          <p className={`text-2xl font-bold ${net >= 0 ? "text-green-400" : "text-red-400"}`}>{formatCurrency(net)}</p>
+          <p className={`text-2xl font-bold ${net >= 0 ? "text-green-600" : "text-red-500"}`}>{formatCurrency(net)}</p>
           <p className="text-xs text-muted-foreground mt-1">
             {income > 0 ? `${((net / income) * 100).toFixed(0)}% savings rate` : "Add income"}
           </p>
@@ -96,7 +100,7 @@ export default async function BookkeeperPage() {
         {/* Right: AI Chat */}
         <div className="lg:col-span-3 glass-card overflow-hidden flex flex-col">
           <div className="px-4 pt-4 pb-2 border-b border-border/40 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-purple-400" />
+            <BookOpen className="w-4 h-4 text-purple-600" />
             <span className="text-sm font-semibold">AI Bookkeeper</span>
             <span className="text-xs text-muted-foreground ml-auto">P&L · Expenses · Tax</span>
           </div>

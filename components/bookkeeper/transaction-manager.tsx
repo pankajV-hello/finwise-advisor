@@ -82,7 +82,7 @@ export function TransactionManager({ userId, transactions: initial, categories }
               <p className="font-medium truncate">{tx.description}</p>
               <p className="text-xs text-muted-foreground">{tx.category} · {formatDate(tx.date)}</p>
             </div>
-            <span className={cn("font-semibold shrink-0 text-sm", tx.amount > 0 ? "text-green-400" : "text-red-400")}>
+            <span className={cn("font-semibold shrink-0 text-sm", tx.amount > 0 ? "text-green-600" : "text-red-500")}>
               {tx.amount > 0 ? "+" : ""}{formatCurrency(Math.abs(tx.amount))}
             </span>
             {tx.is_tax_deductible && (
@@ -90,7 +90,7 @@ export function TransactionManager({ userId, transactions: initial, categories }
             )}
             <button
               onClick={() => handleDelete(tx.id)}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-red-400 transition-all shrink-0"
+              className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-red-500 transition-all shrink-0"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>

@@ -49,7 +49,7 @@ export default async function GoalsPage() {
 
         <div className="lg:col-span-3 glass-card overflow-hidden flex flex-col">
           <div className="px-4 pt-4 pb-2 border-b border-border/40 flex items-center gap-2">
-            <Target className="w-4 h-4 text-orange-400" />
+            <Target className="w-4 h-4 text-orange-500" />
             <span className="text-sm font-semibold">Goals Advisor AI</span>
           </div>
           <div className="flex-1 overflow-hidden">

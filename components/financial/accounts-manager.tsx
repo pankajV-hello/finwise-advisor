@@ -71,7 +71,7 @@ export function AccountsManager({ userId, accounts: initialAccounts }: { userId:
 
   const renderGroup = (list: Account[], label: string, isAsset: boolean) => (
     <div>
-      <p className={cn("text-xs font-semibold uppercase tracking-wider mb-2", isAsset ? "text-green-400" : "text-red-400")}>
+      <p className={cn("text-xs font-semibold uppercase tracking-wider mb-2", isAsset ? "text-green-600" : "text-red-500")}>
         {isAsset ? <TrendingUp className="inline w-3.5 h-3.5 mr-1" /> : <TrendingDown className="inline w-3.5 h-3.5 mr-1" />}
         {label}
       </p>
@@ -85,12 +85,12 @@ export function AccountsManager({ userId, accounts: initialAccounts }: { userId:
                 <p className="text-sm font-medium truncate">{acc.name}</p>
                 <p className="text-xs text-muted-foreground">{ACCOUNT_TYPES.find(t => t.value === acc.type)?.label || acc.type}</p>
               </div>
-              <span className={cn("text-sm font-semibold shrink-0", isAsset ? "text-green-400" : "text-red-400")}>
+              <span className={cn("text-sm font-semibold shrink-0", isAsset ? "text-green-600" : "text-red-500")}>
                 {formatCurrency(acc.balance)}
               </span>
               <button
                 onClick={() => handleDelete(acc.id)}
-                className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-red-400 transition-all"
+                className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-red-500 transition-all"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

@@ -160,7 +160,7 @@ export function DocumentLibrary({ documents }: { documents: Document[] }) {
                     handleDelete(doc.id);
                   }}
                   disabled={deleting === doc.id}
-                  className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-red-400 transition-colors"
+                  className="p-1.5 rounded hover:bg-accent text-muted-foreground hover:text-red-500 transition-colors"
                 >
                   {deleting === doc.id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />

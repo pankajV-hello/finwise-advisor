@@ -46,12 +46,12 @@ export default async function DashboardPage() {
   const firstName = profile?.full_name?.split(" ")[0] || "there";
 
   const quickLinks = [
-    { href: "/dashboard/tax", icon: Receipt, label: "Tax Advisor", color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/20", desc: "Plan your 2024 return" },
-    { href: "/dashboard/financial", icon: TrendingUp, label: "Financial Advice", color: "text-green-400", bg: "bg-green-400/10 border-green-400/20", desc: "Investment guidance" },
-    { href: "/dashboard/mortgage", icon: Home, label: "Mortgage", color: "text-blue-400", bg: "bg-blue-400/10 border-blue-400/20", desc: "Calculate payments" },
-    { href: "/dashboard/bookkeeper", icon: BookOpen, label: "Bookkeeper", color: "text-purple-400", bg: "bg-purple-400/10 border-purple-400/20", desc: "Track expenses" },
-    { href: "/dashboard/documents", icon: FileText, label: "Documents", color: "text-cyan-400", bg: "bg-cyan-400/10 border-cyan-400/20", desc: "Upload & analyze" },
-    { href: "/dashboard/goals", icon: Target, label: "Goals", color: "text-orange-400", bg: "bg-orange-400/10 border-orange-400/20", desc: "Track progress" },
+    { href: "/dashboard/tax", icon: Receipt, label: "Tax Advisor", color: "text-amber-500", bg: "bg-yellow-400/10 border-yellow-400/20", desc: "Plan your 2024 return" },
+    { href: "/dashboard/financial", icon: TrendingUp, label: "Financial Advice", color: "text-green-600", bg: "bg-green-400/10 border-green-400/20", desc: "Investment guidance" },
+    { href: "/dashboard/mortgage", icon: Home, label: "Mortgage", color: "text-blue-600", bg: "bg-blue-400/10 border-blue-400/20", desc: "Calculate payments" },
+    { href: "/dashboard/bookkeeper", icon: BookOpen, label: "Bookkeeper", color: "text-purple-600", bg: "bg-purple-400/10 border-purple-400/20", desc: "Track expenses" },
+    { href: "/dashboard/documents", icon: FileText, label: "Documents", color: "text-cyan-600", bg: "bg-cyan-400/10 border-cyan-400/20", desc: "Upload & analyze" },
+    { href: "/dashboard/goals", icon: Target, label: "Goals", color: "text-orange-500", bg: "bg-orange-400/10 border-orange-400/20", desc: "Track progress" },
   ];
 
   return (
@@ -65,7 +65,7 @@ export default async function DashboardPage() {
           </p>
         </div>
         {(alerts?.length || 0) > 0 && (
-          <Link href="/dashboard/alerts" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-400/10 border border-yellow-400/20 text-yellow-400 text-sm hover:bg-yellow-400/15 transition-colors">
+          <Link href="/dashboard/alerts" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-yellow-400/10 border border-yellow-400/20 text-amber-500 text-sm hover:bg-yellow-400/15 transition-colors">
             <Bell className="w-4 h-4" />
             {alerts!.length} alert{alerts!.length > 1 ? "s" : ""}
           </Link>
@@ -85,15 +85,15 @@ export default async function DashboardPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <TrendingUp className="w-3 h-3 text-green-400" /> Total Assets
+                <TrendingUp className="w-3 h-3 text-green-600" /> Total Assets
               </p>
-              <p className="text-lg font-semibold text-green-400 mt-0.5">{formatCurrency(netWorthData.assets)}</p>
+              <p className="text-lg font-semibold text-green-600 mt-0.5">{formatCurrency(netWorthData.assets)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <TrendingDown className="w-3 h-3 text-red-400" /> Total Liabilities
+                <TrendingDown className="w-3 h-3 text-red-500" /> Total Liabilities
               </p>
-              <p className="text-lg font-semibold text-red-400 mt-0.5">{formatCurrency(netWorthData.liabilities)}</p>
+              <p className="text-lg font-semibold text-red-500 mt-0.5">{formatCurrency(netWorthData.liabilities)}</p>
             </div>
           </div>
           {accounts && accounts.length === 0 && (
@@ -159,7 +159,7 @@ export default async function DashboardPage() {
                     </div>
                     <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-gold-dark to-gold transition-all duration-700"
+                        className="h-full rounded-full bg-gradient-to-r from-primary to-sky transition-all duration-700"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -196,7 +196,7 @@ export default async function DashboardPage() {
                     <p className="text-sm font-medium truncate">{tx.description}</p>
                     <p className="text-xs text-muted-foreground">{tx.category}</p>
                   </div>
-                  <span className={`text-sm font-semibold shrink-0 ml-2 ${tx.amount > 0 ? "text-green-400" : "text-red-400"}`}>
+                  <span className={`text-sm font-semibold shrink-0 ml-2 ${tx.amount > 0 ? "text-green-600" : "text-red-500"}`}>
                     {tx.amount > 0 ? "+" : ""}{formatCurrency(Math.abs(tx.amount))}
                   </span>
                 </div>
@@ -216,12 +216,12 @@ export default async function DashboardPage() {
       {alerts && alerts.length > 0 && (
         <div className="glass-card p-5">
           <h2 className="font-semibold flex items-center gap-2 mb-3">
-            <AlertTriangle className="w-4 h-4 text-yellow-400" /> Alerts
+            <AlertTriangle className="w-4 h-4 text-amber-500" /> Alerts
           </h2>
           <div className="space-y-2">
             {alerts.map((alert) => (
               <div key={alert.id} className="flex items-start gap-3 p-3 rounded-lg bg-yellow-400/5 border border-yellow-400/15">
-                <Bell className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
+                <Bell className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="text-sm font-medium">{alert.title}</p>
                   <p className="text-xs text-muted-foreground">{alert.message}</p>

@@ -4,6 +4,7 @@ import { Home } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { AIChat } from "@/components/chat/ai-chat";
 import { MortgageCalculator } from "@/components/mortgage/mortgage-calculator";
+import { AdviceWarning } from "@/components/legal/advice-warning";
 
 const MORTGAGE_SUGGESTIONS = [
   "Should I go fixed or variable rate right now?",
@@ -19,11 +20,10 @@ export default async function MortgagePage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const { data: mortgages } = await supabase
-    .from("mortgages")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at");
+  const [{ data: mortgages }, { data: profile }] = await Promise.all([
+    supabase.from("mortgages").select("*").eq("user_id", user.id).order("created_at"),
+    supabase.from("profiles").select("country").eq("id", user.id).single(),
+  ]);
 
   const primaryMortgage = mortgages?.[0];
 
@@ -47,12 +47,14 @@ export default async function MortgagePage() {
         icon={<Home className="w-5 h-5" />}
       />
 
+      <AdviceWarning country={profile?.country || "AU"} className="mb-4" />
+
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-200px)]">
         {/* Left: Calculator */}
         <div className="lg:col-span-2 overflow-y-auto">
           <div className="glass-card p-5">
             <h2 className="font-semibold text-sm mb-4 flex items-center gap-2">
-              <Home className="w-4 h-4 text-blue-400" /> Mortgage Calculator
+              <Home className="w-4 h-4 text-blue-600" /> Mortgage Calculator
             </h2>
             <MortgageCalculator userId={user.id} existingMortgage={primaryMortgage} />
           </div>
@@ -61,7 +63,7 @@ export default async function MortgagePage() {
         {/* Right: AI Chat */}
         <div className="lg:col-span-3 glass-card overflow-hidden flex flex-col">
           <div className="px-4 pt-4 pb-2 border-b border-border/40 flex items-center gap-2">
-            <Home className="w-4 h-4 text-blue-400" />
+            <Home className="w-4 h-4 text-blue-600" />
             <span className="text-sm font-semibold">Mortgage Advisor AI</span>
             <span className="text-xs text-muted-foreground ml-auto">Canadian mortgage specialist</span>
           </div>
