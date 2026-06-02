@@ -8,11 +8,11 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
-import { execSync } from "child_process";
-import * as fs from "fs";
-import * as os from "os";
-import * as path from "path";
 import { getProvider } from "@/lib/agents";
+
+// Node-only modules are imported dynamically inside renderPdfToImage so this
+// file still bundles for edge runtimes (e.g. Cloudflare Workers) where they
+// are unavailable. On those runtimes the sips path is simply skipped.
 
 export type DocumentType =
   | "bank_statement" | "salary_slip" | "t4" | "t1" | "w2"
@@ -79,28 +79,33 @@ async function extractPdfText(buffer: Buffer): Promise<string> {
   }
 }
 
-// ─── Scanned PDF → JPEG via macOS sips ───────────────────────────────────────
-function renderPdfToImage(buffer: Buffer): Buffer | null {
-  const tmpDir = os.tmpdir();
-  const pdfPath = path.join(tmpDir, `fw_${Date.now()}.pdf`);
-  const imgPath = path.join(tmpDir, `fw_${Date.now()}.jpg`);
+// ─── Scanned PDF → JPEG via macOS sips (Node runtime only) ───────────────────
+async function renderPdfToImage(buffer: Buffer): Promise<Buffer | null> {
+  // Skip entirely on edge runtimes where Node modules are unavailable
+  if (typeof process === "undefined" || !process.versions?.node) return null;
   try {
-    fs.writeFileSync(pdfPath, buffer);
-    // sips is macOS built-in — renders first page of PDF to JPEG
-    execSync(
-      `sips -s format jpeg -s dpiHeight 150 -s dpiWidth 150 "${pdfPath}" --out "${imgPath}"`,
-      { timeout: 15000, stdio: "pipe" }
-    );
-    if (fs.existsSync(imgPath)) {
-      const img = fs.readFileSync(imgPath);
-      return img;
+    const [{ execSync }, fs, os, path] = await Promise.all([
+      import("child_process"),
+      import("fs"),
+      import("os"),
+      import("path"),
+    ]);
+    const tmpDir = os.tmpdir();
+    const pdfPath = path.join(tmpDir, `fw_${Date.now()}.pdf`);
+    const imgPath = path.join(tmpDir, `fw_${Date.now()}.jpg`);
+    try {
+      fs.writeFileSync(pdfPath, buffer);
+      execSync(
+        `sips -s format jpeg -s dpiHeight 150 -s dpiWidth 150 "${pdfPath}" --out "${imgPath}"`,
+        { timeout: 15000, stdio: "pipe" }
+      );
+      return fs.existsSync(imgPath) ? fs.readFileSync(imgPath) : null;
+    } finally {
+      if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+      if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
     }
-    return null;
   } catch {
     return null;
-  } finally {
-    if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
-    if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
   }
 }
 
@@ -234,6 +239,26 @@ async function extractWithVision(buffer: Buffer, mimeType: string, fileName: str
   return parseJSON(t);
 }
 
+// ─── Anthropic native PDF (edge-safe, no renderer needed) ────────────────────
+async function extractPdfWithAnthropic(buffer: Buffer, fileName: string): Promise<ExtractedDocument> {
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
+  const base64 = buffer.toString("base64");
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 4096,
+    system: [{ type: "text", text: EXTRACTION_PROMPT, cache_control: { type: "ephemeral" } }],
+    messages: [{
+      role: "user",
+      content: [
+        { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } } as Anthropic.DocumentBlockParam,
+        { type: "text", text: `File: ${fileName}\n\nExtract all financial data as JSON.` },
+      ],
+    }],
+  });
+  const t = response.content[0].type === "text" ? response.content[0].text : "";
+  return parseJSON(t);
+}
+
 // ─── Public entry point ───────────────────────────────────────────────────────
 export async function extractDocumentData(
   fileBuffer: Buffer,
@@ -255,11 +280,19 @@ export async function extractDocumentData(
       return extractWithText(pdfText, fileName);
     }
 
-    // Scanned PDF — render to image via sips (macOS) then send to vision
-    console.log("Scanned PDF detected — rendering to image via sips...");
-    const imgBuffer = renderPdfToImage(fileBuffer);
+    // Scanned PDF — render to image via sips (Node/macOS) then send to vision
+    const imgBuffer = await renderPdfToImage(fileBuffer);
     if (imgBuffer) {
       return extractWithVision(imgBuffer, "image/jpeg", fileName);
+    }
+
+    // Edge runtime (no sips): if Anthropic is configured, it accepts PDFs natively
+    if (process.env.ANTHROPIC_API_KEY) {
+      try {
+        return await extractPdfWithAnthropic(fileBuffer, fileName);
+      } catch (e) {
+        console.warn("Anthropic PDF fallback failed:", e instanceof Error ? e.message : e);
+      }
     }
 
     // Final fallback — ask the model to guess from filename only

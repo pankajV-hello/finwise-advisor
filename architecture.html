@@ -3,1329 +3,603 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>FinWise AI — Architecture & Design</title>
+<title>FinWise AI — Architecture (Functional · Non-Functional · Technical)</title>
 <style>
-  :root {
-    --bg: #070d1a;
-    --surface: #0e1829;
-    --surface2: #152238;
-    --border: #1e3050;
-    --gold: #c9a84c;
-    --gold-light: #e8c97a;
-    --gold-dark: #9b7a2f;
-    --text: #e8edf4;
-    --muted: #6b7fa0;
-    --green: #22c55e;
-    --red: #ef4444;
-    --blue: #3b82f6;
-    --purple: #a855f7;
-    --cyan: #06b6d4;
-    --orange: #f97316;
+  :root{
+    --bg:#f7f9fc; --surface:#ffffff; --surface2:#f1f5fb; --border:#e2e8f2;
+    --ink:#1e293b; --muted:#64748b; --faint:#94a3b8;
+    --primary:#5363e8; --primary-soft:#eef1fe; --sky:#38bdf8; --sky-soft:#e6f7fe;
+    --gold:#f2b33d; --gold-soft:#fdf4e3; --lime:#66b539; --lime-soft:#eef8e8;
+    --red:#ef4444; --red-soft:#fdecec; --purple:#a855f7; --purple-soft:#f6edfe;
+    --radius:16px;
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, sans-serif;
-    font-size: 14px;
-    line-height: 1.6;
-    min-height: 100vh;
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink);
+    font-size:14px;line-height:1.6;
+    background-image:
+      radial-gradient(ellipse 70% 40% at 50% -5%, #e8ecfe 0%, transparent 55%),
+      radial-gradient(ellipse 50% 40% at 100% 0%, #fdf2dd 0%, transparent 50%),
+      radial-gradient(ellipse 50% 40% at 0% 100%, #eaf7e6 0%, transparent 50%);
+    background-attachment:fixed;
   }
-  body::before {
-    content: '';
-    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background:
-      radial-gradient(ellipse at 15% 0%, rgba(201,168,76,.07) 0%, transparent 45%),
-      radial-gradient(ellipse at 85% 100%, rgba(30,48,80,.5) 0%, transparent 45%);
-    pointer-events: none; z-index: 0;
-  }
+  .wrap{max-width:1280px;margin:0 auto;padding:0 24px}
+  h1,h2,h3,h4{font-family:'Plus Jakarta Sans','Inter',sans-serif;letter-spacing:-.01em}
 
-  /* ── LAYOUT ── */
-  .wrapper { max-width: 1400px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
-  section { padding: 60px 0; }
-  section + section { border-top: 1px solid var(--border); }
+  /* Header */
+  header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.82);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+  .hd{max-width:1280px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .logo{display:flex;align-items:center;gap:11px}
+  .logo .mark{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--primary),var(--sky));display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;box-shadow:0 6px 18px rgba(83,99,232,.28)}
+  .logo .name{font-weight:800;font-size:17px;background:linear-gradient(120deg,var(--primary),var(--sky));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .logo .sub{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.14em}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{padding:7px 14px;border-radius:30px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted);border:1px solid transparent;text-decoration:none;transition:.15s}
+  .tab:hover{background:var(--surface);border-color:var(--border);color:var(--ink)}
+  .tab.active{background:var(--primary-soft);border-color:#d6dcfb;color:var(--primary)}
 
-  /* ── HERO ── */
-  header {
-    background: linear-gradient(180deg, rgba(201,168,76,.05) 0%, transparent 100%);
-    border-bottom: 1px solid var(--border);
-    padding: 40px 0;
-    position: sticky; top: 0; z-index: 100;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-  .header-inner { max-width: 1400px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
-  .logo { display: flex; align-items: center; gap: 12px; }
-  .logo-icon {
-    width: 40px; height: 40px; border-radius: 10px;
-    background: linear-gradient(135deg, var(--gold-dark), var(--gold-light));
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px; box-shadow: 0 4px 20px rgba(201,168,76,.25);
-  }
-  .logo-text h1 { font-size: 20px; font-weight: 700; background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .logo-text p { font-size: 11px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; }
-  .nav-pills { display: flex; gap: 4px; }
-  .nav-pill { padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid transparent; color: var(--muted); transition: all .2s; text-decoration: none; }
-  .nav-pill:hover { color: var(--text); border-color: var(--border); background: var(--surface); }
-  .nav-pill.active { color: var(--gold); border-color: rgba(201,168,76,.3); background: rgba(201,168,76,.08); }
-  .version-badge { font-size: 11px; padding: 4px 10px; border-radius: 20px; background: rgba(201,168,76,.1); border: 1px solid rgba(201,168,76,.2); color: var(--gold); }
+  /* Hero */
+  .hero{text-align:center;padding:64px 0 36px}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--primary);margin-bottom:12px}
+  .hero h1{font-size:42px;font-weight:800;line-height:1.12;margin-bottom:14px}
+  .hero h1 span{background:linear-gradient(120deg,var(--primary),var(--sky));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .hero p{font-size:17px;color:var(--muted);max-width:660px;margin:0 auto}
+  .flags{display:flex;gap:8px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+  .flag{font-size:12px;font-weight:600;padding:5px 13px;border-radius:30px;background:var(--surface);border:1px solid var(--border);color:var(--muted)}
 
-  /* ── HERO SECTION ── */
-  .hero { padding: 80px 0 60px; text-align: center; }
-  .hero h2 { font-size: 48px; font-weight: 800; line-height: 1.2; margin-bottom: 16px; }
-  .hero h2 span { background: linear-gradient(135deg, var(--gold), var(--gold-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-  .hero p { font-size: 18px; color: var(--muted); max-width: 600px; margin: 0 auto 40px; }
-  .hero-stats { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; }
-  .hero-stat { text-align: center; }
-  .hero-stat .number { font-size: 32px; font-weight: 800; color: var(--gold); }
-  .hero-stat .label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  /* Sections */
+  section{padding:48px 0;border-top:1px solid var(--border)}
+  .sec-head{margin-bottom:30px}
+  .sec-tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:4px 12px;border-radius:30px;margin-bottom:12px}
+  .sec-tag.fn{background:var(--primary-soft);color:var(--primary)}
+  .sec-tag.nf{background:var(--gold-soft);color:#b9821a}
+  .sec-tag.tech{background:var(--purple-soft);color:#8b3fd8}
+  .sec-head h2{font-size:30px;font-weight:800;margin-bottom:8px}
+  .sec-head p{font-size:15px;color:var(--muted);max-width:680px}
 
-  /* ── CARDS ── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    transition: border-color .2s, box-shadow .2s;
-  }
-  .card:hover { border-color: rgba(201,168,76,.25); box-shadow: 0 0 30px rgba(201,168,76,.04); }
-  .card-sm { padding: 16px; border-radius: 12px; }
-  .card-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; display: flex; align-items: center; gap-8px; }
-  .card-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); margin-right: 8px; display: inline-block; }
+  /* Cards & grids */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;box-shadow:0 1px 3px rgba(30,41,59,.04)}
+  .card:hover{box-shadow:0 8px 30px rgba(83,99,232,.07)}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .gauto{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+  @media(max-width:880px){.g2,.g3,.g4{grid-template-columns:1fr}.tabs{display:none}}
 
-  /* ── GRID ── */
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-  .grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+  .card-title{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  .ico{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;margin-bottom:12px}
+  .ico.p{background:var(--primary-soft)}.ico.s{background:var(--sky-soft)}.ico.g{background:var(--gold-soft)}.ico.l{background:var(--lime-soft)}.ico.r{background:var(--red-soft)}.ico.u{background:var(--purple-soft)}
+  .feat h4{font-size:15px;font-weight:700;margin-bottom:5px}
+  .feat p{font-size:12.5px;color:var(--muted)}
+  ul.li{list-style:none;margin-top:8px}
+  ul.li li{font-size:12.5px;color:var(--muted);padding:3px 0;display:flex;gap:8px}
+  ul.li li::before{content:'→';color:var(--primary);font-weight:700}
 
-  /* ── SECTION TITLES ── */
-  .section-label { font-size: 11px; color: var(--gold); text-transform: uppercase; letter-spacing: .15em; font-weight: 600; margin-bottom: 8px; }
-  .section-title { font-size: 30px; font-weight: 800; margin-bottom: 10px; }
-  .section-desc { font-size: 15px; color: var(--muted); margin-bottom: 40px; max-width: 600px; }
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:30px}
+  .b-p{background:var(--primary-soft);color:var(--primary)}.b-g{background:var(--gold-soft);color:#b9821a}.b-l{background:var(--lime-soft);color:#4e9128}.b-s{background:var(--sky-soft);color:#0c8fc7}.b-u{background:var(--purple-soft);color:#8b3fd8}.b-r{background:var(--red-soft);color:#d33}
 
-  /* ── BADGES ── */
-  .badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-  .badge-gold { background: rgba(201,168,76,.12); border: 1px solid rgba(201,168,76,.25); color: var(--gold); }
-  .badge-green { background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.25); color: var(--green); }
-  .badge-blue { background: rgba(59,130,246,.12); border: 1px solid rgba(59,130,246,.25); color: var(--blue); }
-  .badge-purple { background: rgba(168,85,247,.12); border: 1px solid rgba(168,85,247,.25); color: var(--purple); }
-  .badge-red { background: rgba(239,68,68,.12); border: 1px solid rgba(239,68,68,.25); color: var(--red); }
-  .badge-cyan { background: rgba(6,182,212,.12); border: 1px solid rgba(6,182,212,.25); color: var(--cyan); }
-  .badge-orange { background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.25); color: var(--orange); }
+  /* Flow */
+  .flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .node{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:11px 15px;font-size:12.5px;font-weight:600;text-align:center;flex:1;min-width:90px}
+  .arr{color:var(--faint);font-size:17px}
 
-  /* ── ARCHITECTURE DIAGRAM ── */
-  .arch-diagram {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 40px;
-    position: relative;
-    overflow: hidden;
-  }
-  .arch-diagram::before {
-    content: '';
-    position: absolute; top: 0; left: 0; right: 0; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  }
-  .arch-layer {
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
-    margin-bottom: 16px;
-    position: relative;
-  }
-  .arch-layer-label {
-    position: absolute; top: -10px; left: 16px;
-    background: var(--surface); padding: 0 8px;
-    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .12em;
-    color: var(--muted);
-  }
-  .arch-boxes { display: flex; gap: 12px; flex-wrap: wrap; }
-  .arch-box {
-    flex: 1; min-width: 120px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    text-align: center;
-    transition: all .2s;
-    cursor: default;
-  }
-  .arch-box:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.3); }
-  .arch-box .icon { font-size: 24px; margin-bottom: 8px; }
-  .arch-box .name { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
-  .arch-box .sub { font-size: 10px; color: var(--muted); }
-  .arch-arrow { text-align: center; padding: 6px 0; color: var(--muted); font-size: 20px; }
+  /* Layered diagram */
+  .layer{border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:14px;position:relative;background:var(--surface)}
+  .layer-lbl{position:absolute;top:-9px;left:16px;background:var(--surface);padding:0 9px;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+  .boxes{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+  .box{flex:1;min-width:110px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;transition:.15s}
+  .box:hover{border-color:var(--primary);transform:translateY(-2px)}
+  .box .e{font-size:21px}.box .n{font-size:12px;font-weight:700;margin-top:5px}.box .d{font-size:10.5px;color:var(--faint);margin-top:2px}
+  .ac{text-align:center;color:var(--faint);font-size:12px;padding:5px 0}
 
-  /* ── DATA FLOW ── */
-  .flow-step {
-    display: flex; align-items: flex-start; gap: 16px;
-    padding: 16px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .flow-step:last-child { border-bottom: none; }
-  .flow-num {
-    width: 28px; height: 28px; border-radius: 50%;
-    background: linear-gradient(135deg, var(--gold-dark), var(--gold));
-    color: #070d1a; font-size: 12px; font-weight: 800;
-    display: flex; align-items: center; justify-content: center; shrink: 0;
-    flex-shrink: 0;
-  }
-  .flow-content h4 { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
-  .flow-content p { font-size: 12px; color: var(--muted); }
+  /* Table */
+  table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+  th{text-align:left;padding:9px 12px;background:var(--surface2);font-weight:700;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+  td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--ink)}
+  tr:last-child td{border-bottom:none}
+  td .q{font-weight:700;color:var(--primary)}
 
-  /* ── AGENTS ── */
-  .agent-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 20px;
-    transition: all .25s;
-  }
-  .agent-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,.3); }
-  .agent-icon {
-    width: 48px; height: 48px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; margin-bottom: 14px;
-  }
-  .agent-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-  .agent-role { font-size: 11px; color: var(--muted); margin-bottom: 12px; }
-  .agent-features { list-style: none; space-y: 4px; }
-  .agent-features li { font-size: 12px; color: var(--muted); padding: 2px 0; display: flex; align-items: flex-start; gap: 6px; }
-  .agent-features li::before { content: '→'; color: var(--gold); flex-shrink: 0; }
+  /* Data model */
+  .tbl-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+  .tbl-h{background:var(--surface2);padding:9px 13px;font-weight:700;font-family:monospace;font-size:12.5px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px}
+  .tbl-b{padding:9px 13px}
+  .fld{font-family:monospace;font-size:11px;padding:2.5px 0;color:var(--muted)}
+  .fld .k{color:var(--gold);font-weight:700}.fld .f{color:var(--sky)}.fld .n{color:var(--ink)}
 
-  /* ── DB SCHEMA ── */
-  .table-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    transition: border-color .2s;
-  }
-  .table-card:hover { border-color: rgba(201,168,76,.3); }
-  .table-header {
-    background: var(--surface2);
-    padding: 10px 16px;
-    display: flex; align-items: center; gap: 8px;
-    border-bottom: 1px solid var(--border);
-  }
-  .table-name { font-size: 13px; font-weight: 700; font-family: 'Courier New', monospace; }
-  .table-body { padding: 12px 16px; }
-  .field { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-family: 'Courier New', monospace; font-size: 11px; }
-  .field-pk { color: var(--gold); font-weight: 700; }
-  .field-fk { color: var(--blue); }
-  .field-name { color: var(--text); }
-  .field-type { color: var(--muted); }
+  .note{background:var(--gold-soft);border:1px solid #f0dcae;border-radius:12px;padding:14px 18px;font-size:13px;color:#8a6516;margin-top:18px}
+  .note b{color:#6e500f}
+  .ok{background:var(--lime-soft);border:1px solid #cce8bd;border-radius:12px;padding:14px 18px;font-size:13px;color:#3d6b22}
+  ul.ck{list-style:none}ul.ck li{font-size:12.5px;color:var(--muted);padding:3px 0;display:flex;gap:8px}ul.ck li::before{content:'✓';color:var(--lime);font-weight:800}
 
-  /* ── MONITORING ── */
-  .monitor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .metric-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-  }
-  .metric-value { font-size: 36px; font-weight: 800; line-height: 1; }
-  .metric-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
-  .metric-trend { font-size: 11px; margin-top: 6px; }
-  .trend-up { color: var(--green); }
-  .trend-down { color: var(--red); }
+  .metric{text-align:center}
+  .metric .v{font-size:30px;font-weight:800;line-height:1}
+  .metric .l{font-size:11px;color:var(--muted);margin-top:4px}
 
-  /* Live monitor pulse */
-  .live-dot {
-    display: inline-block; width: 8px; height: 8px;
-    border-radius: 50%; background: var(--green);
-    animation: pulse 2s ease-in-out infinite;
-    margin-right: 6px;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,.4); }
-    50% { opacity: .7; box-shadow: 0 0 0 6px rgba(34,197,94,0); }
-  }
-  .status-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 0; border-bottom: 1px solid var(--border);
-  }
-  .status-row:last-child { border-bottom: none; }
-  .status-name { font-size: 13px; display: flex; align-items: center; }
-  .status-ok { color: var(--green); font-size: 12px; font-weight: 600; }
-  .status-warn { color: var(--orange); font-size: 12px; font-weight: 600; }
-  .bar-container { background: var(--border); border-radius: 4px; height: 6px; overflow: hidden; margin-top: 8px; }
-  .bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
-
-  /* Sparkline (pure CSS animated) */
-  .sparkline { height: 40px; display: flex; align-items: flex-end; gap: 3px; margin-top: 12px; }
-  .spark-bar { flex: 1; border-radius: 3px 3px 0 0; opacity: .7; animation: grow .6s ease-out both; }
-  @keyframes grow { from { transform: scaleY(0); transform-origin: bottom; } to { transform: scaleY(1); transform-origin: bottom; } }
-
-  /* ── SECURITY ── */
-  .security-item {
-    display: flex; gap: 16px; padding: 16px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .security-item:last-child { border-bottom: none; }
-  .security-icon {
-    width: 36px; height: 36px; border-radius: 10px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px; flex-shrink: 0;
-  }
-  .security-content h4 { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
-  .security-content p { font-size: 12px; color: var(--muted); }
-
-  /* ── TECH STACK ── */
-  .tech-item {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 16px;
-    background: var(--surface2); border-radius: 10px;
-    border: 1px solid var(--border);
-    transition: all .2s;
-  }
-  .tech-item:hover { border-color: rgba(201,168,76,.25); }
-  .tech-logo { font-size: 22px; width: 36px; text-align: center; }
-  .tech-name { font-size: 13px; font-weight: 600; }
-  .tech-desc { font-size: 11px; color: var(--muted); }
-
-  /* ── LIVE MONITOR PANEL ── */
-  #live-panel {
-    position: fixed; bottom: 24px; right: 24px; width: 320px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
-    z-index: 200; overflow: hidden;
-    transition: transform .3s ease, opacity .3s ease;
-  }
-  .live-panel-header {
-    background: var(--surface2);
-    padding: 12px 16px;
-    display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-  }
-  .live-panel-title { font-size: 12px; font-weight: 700; display: flex; align-items: center; }
-  .live-panel-body { padding: 14px 16px; max-height: 320px; overflow-y: auto; }
-  .log-line {
-    font-family: 'Courier New', monospace; font-size: 11px;
-    padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.04);
-    animation: fade-in .3s ease;
-  }
-  .log-line .ts { color: var(--muted); margin-right: 8px; }
-  .log-line .lvl-info { color: var(--blue); }
-  .log-line .lvl-ok { color: var(--green); }
-  .log-line .lvl-warn { color: var(--orange); }
-  .log-line .lvl-ai { color: var(--gold); }
-  @keyframes fade-in { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: none; } }
-  .panel-minimized { transform: translateY(calc(100% - 46px)); }
-  #toggle-panel { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 0; }
-
-  /* ── RESPONSIVE ── */
-  @media (max-width: 900px) {
-    .grid-2, .grid-3, .grid-4, .monitor-grid { grid-template-columns: 1fr; }
-    .hero h2 { font-size: 32px; }
-    .nav-pills { display: none; }
-    #live-panel { width: calc(100% - 32px); right: 16px; }
-  }
-
-  /* ── TABS ── */
-  .tabs { display: flex; gap: 2px; background: var(--surface2); border-radius: 10px; padding: 4px; width: fit-content; margin-bottom: 24px; }
-  .tab { padding: 7px 18px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--muted); transition: all .2s; border: none; background: none; }
-  .tab.active { background: var(--surface); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,.2); }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-
-  /* ── MISC ── */
-  code { font-family: 'Courier New', monospace; background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 12px; color: var(--gold); }
-  .divider { height: 1px; background: var(--border); margin: 32px 0; }
-  .note { background: rgba(201,168,76,.06); border: 1px solid rgba(201,168,76,.2); border-radius: 10px; padding: 14px 18px; font-size: 13px; color: var(--muted); margin: 20px 0; }
-  .note strong { color: var(--gold); }
-  ul.checklist { list-style: none; }
-  ul.checklist li { padding: 4px 0; font-size: 13px; color: var(--muted); display: flex; align-items: flex-start; gap: 8px; }
-  ul.checklist li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+  footer{border-top:1px solid var(--border);padding:32px 0;text-align:center;color:var(--faint);font-size:12px}
+  .scrollx{overflow-x:auto}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════════ HEADER -->
 <header>
-  <div class="header-inner">
+  <div class="hd">
     <div class="logo">
-      <div class="logo-icon">✦</div>
-      <div class="logo-text">
-        <h1>FinWise AI</h1>
-        <p>Architecture & Design</p>
-      </div>
+      <div class="mark">✦</div>
+      <div><div class="name">FinWise AI</div><div class="sub">Architecture Blueprint</div></div>
     </div>
-    <nav class="nav-pills">
-      <a href="#overview" class="nav-pill active">Overview</a>
-      <a href="#agents" class="nav-pill">AI Agents</a>
-      <a href="#database" class="nav-pill">Database</a>
-      <a href="#documents" class="nav-pill">Documents</a>
-      <a href="#security" class="nav-pill">Security</a>
-      <a href="#monitoring" class="nav-pill">Monitoring</a>
-      <a href="#deploy" class="nav-pill">Deploy</a>
+    <nav class="tabs">
+      <a href="#overview" class="tab active">Overview</a>
+      <a href="#functional" class="tab">Functional</a>
+      <a href="#nonfunctional" class="tab">Non-Functional</a>
+      <a href="#technical" class="tab">Technical</a>
+      <a href="#data" class="tab">Data Model</a>
+      <a href="#security" class="tab">Security</a>
+      <a href="#deploy" class="tab">Deployment</a>
     </nav>
-    <span class="version-badge">v1.0 · 2026</span>
+    <span class="badge b-p">v2.0 · 2026</span>
   </div>
 </header>
 
-<!-- ═══════════════════════════════════════════════════════ HERO -->
-<div class="wrapper">
+<div class="wrap">
   <div class="hero" id="overview">
-    <div class="section-label">Full-Stack AI Financial Platform</div>
-    <h2>Architecture <span>Deep Dive</span></h2>
-    <p>A production-grade financial advisor platform built on Next.js 14, Supabase, and Claude claude-sonnet-4-6 — designed for security, performance, and real financial insight.</p>
-    <div class="hero-stats">
-      <div class="hero-stat"><div class="number">5</div><div class="label">AI Agents</div></div>
-      <div class="hero-stat"><div class="number">12</div><div class="label">DB Tables</div></div>
-      <div class="hero-stat"><div class="number">8</div><div class="label">API Routes</div></div>
-      <div class="hero-stat"><div class="number">20+</div><div class="label">Components</div></div>
-      <div class="hero-stat"><div class="number">∞</div><div class="label">Doc Types</div></div>
+    <div class="eyebrow">Personal Finance · AI · Multi-Jurisdiction</div>
+    <h1>FinWise AI <span>Architecture</span></h1>
+    <p>A complete architecture blueprint — functional, non-functional, and technical — for an AI financial guidance platform serving individuals and SMEs across Australia, New Zealand, Canada and the USA.</p>
+    <div class="flags">
+      <span class="flag">🇦🇺 ATO</span><span class="flag">🇳🇿 IRD</span><span class="flag">🇨🇦 CRA</span><span class="flag">🇺🇸 IRS</span>
+    </div>
+    <div class="grid g4" style="margin-top:34px">
+      <div class="card metric"><div class="v" style="color:var(--primary)">5</div><div class="l">AI Advisor Agents</div></div>
+      <div class="card metric"><div class="v" style="color:var(--sky)">14</div><div class="l">Database Tables</div></div>
+      <div class="card metric"><div class="v" style="color:var(--gold)">4</div><div class="l">Jurisdictions</div></div>
+      <div class="card metric"><div class="v" style="color:var(--lime)">2</div><div class="l">Entity Types</div></div>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════ SYSTEM ARCH -->
-<section>
-<div class="wrapper">
-  <div class="section-label">System Architecture</div>
-  <div class="section-title">How it all connects</div>
-  <p class="section-desc">Three-tier architecture: React frontend → Next.js API layer → Supabase + Anthropic backend.</p>
-
-  <div class="arch-diagram">
-    <!-- Tier 1: Browser -->
-    <div class="arch-layer" style="border-color: rgba(201,168,76,.25);">
-      <div class="arch-layer-label" style="color:var(--gold)">CLIENT LAYER · Browser</div>
-      <div class="arch-boxes">
-        <div class="arch-box"><div class="icon">🏠</div><div class="name">Dashboard</div><div class="sub">Net worth, goals, health score</div></div>
-        <div class="arch-box"><div class="icon">🧾</div><div class="name">Tax Advisor</div><div class="sub">AI tax planning chat</div></div>
-        <div class="arch-box"><div class="icon">📈</div><div class="name">Financial Advice</div><div class="sub">Investments & wealth</div></div>
-        <div class="arch-box"><div class="icon">🏠</div><div class="name">Mortgage</div><div class="sub">Calculator + amortization</div></div>
-        <div class="arch-box"><div class="icon">📒</div><div class="name">Bookkeeper</div><div class="sub">Transactions & P&L</div></div>
-        <div class="arch-box"><div class="icon">📄</div><div class="name">Documents</div><div class="sub">Upload + bank connect</div></div>
-      </div>
-    </div>
-
-    <div class="arch-arrow">↕ HTTPS / Server Components / RSC Streaming</div>
-
-    <!-- Tier 2: API -->
-    <div class="arch-layer" style="border-color: rgba(59,130,246,.25);">
-      <div class="arch-layer-label" style="color:var(--blue)">API LAYER · Next.js 14 App Router</div>
-      <div class="arch-boxes">
-        <div class="arch-box"><div class="icon">💬</div><div class="name">/api/chat</div><div class="sub">SSE streaming</div></div>
-        <div class="arch-box"><div class="icon">📤</div><div class="name">/api/documents/upload</div><div class="sub">File + extraction</div></div>
-        <div class="arch-box"><div class="icon">🔐</div><div class="name">/auth/*</div><div class="sub">Supabase Auth</div></div>
-        <div class="arch-box"><div class="icon">💰</div><div class="name">/api/accounts</div><div class="sub">CRUD assets/liabilities</div></div>
-        <div class="arch-box"><div class="icon">🎯</div><div class="name">/api/goals</div><div class="sub">Goals management</div></div>
-        <div class="arch-box"><div class="icon">🏦</div><div class="name">/api/plaid</div><div class="sub">Bank feed (Plaid)</div></div>
-      </div>
-    </div>
-
-    <div class="arch-arrow">↕ Supabase-JS SDK · Anthropic SDK · Plaid SDK</div>
-
-    <!-- Tier 3: Backend -->
-    <div class="arch-layer" style="border-color: rgba(168,85,247,.25);">
-      <div class="arch-layer-label" style="color:var(--purple)">BACKEND SERVICES</div>
-      <div class="arch-boxes">
-        <div class="arch-box" style="border-color:rgba(168,85,247,.3)">
-          <div class="icon">🗄️</div><div class="name">Supabase PostgreSQL</div>
-          <div class="sub">12 tables, RLS, migrations</div>
-        </div>
-        <div class="arch-box" style="border-color:rgba(201,168,76,.3)">
-          <div class="icon">🤖</div><div class="name">Claude claude-sonnet-4-6</div>
-          <div class="sub">5 specialist agents, prompt caching</div>
-        </div>
-        <div class="arch-box" style="border-color:rgba(59,130,246,.3)">
-          <div class="icon">📁</div><div class="name">Supabase Storage</div>
-          <div class="sub">financial-docs bucket, private RLS</div>
-        </div>
-        <div class="arch-box" style="border-color:rgba(34,197,94,.3)">
-          <div class="icon">🏦</div><div class="name">Plaid API</div>
-          <div class="sub">12,000+ banks CA/US</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="arch-arrow">↕ CDN · Edge Network</div>
-
-    <!-- Tier 4: Infra -->
-    <div class="arch-layer" style="border-color: rgba(34,197,94,.25);">
-      <div class="arch-layer-label" style="color:var(--green)">INFRASTRUCTURE · Vercel Edge</div>
-      <div class="arch-boxes">
-        <div class="arch-box"><div class="icon">⚡</div><div class="name">Vercel Edge Functions</div><div class="sub">Global CDN, auto-scale</div></div>
-        <div class="arch-box"><div class="icon">🔒</div><div class="name">TLS 1.3</div><div class="sub">End-to-end encryption</div></div>
-        <div class="arch-box"><div class="icon">📊</div><div class="name">Vercel Analytics</div><div class="sub">Performance + Web Vitals</div></div>
-        <div class="arch-box"><div class="icon">🌍</div><div class="name">Global Edge Network</div><div class="sub">&lt;100ms TTFB worldwide</div></div>
-      </div>
-    </div>
+<!-- ════════ FUNCTIONAL ════════ -->
+<section id="functional">
+<div class="wrap">
+  <div class="sec-head">
+    <span class="sec-tag fn">01 · Functional Architecture</span>
+    <h2>What the system does</h2>
+    <p>The capabilities, modules, and user journeys — defined from the user's perspective.</p>
   </div>
-</div>
-</section>
 
-<!-- ═══════════════════════════════════════════════════════ AI AGENTS -->
-<section id="agents">
-<div class="wrapper">
-  <div class="section-label">AI Agent System</div>
-  <div class="section-title">5 Specialist Financial Agents</div>
-  <p class="section-desc">Each agent has a dedicated system prompt with prompt caching (ephemeral cache) on the system block, reducing token costs by up to 90% on repeated queries.</p>
+  <!-- Core modules -->
+  <h3 style="font-size:18px;margin-bottom:16px">Core Functional Modules</h3>
+  <div class="grid gauto" style="margin-bottom:32px">
+    <div class="card feat"><div class="ico g">🧾</div><h4>Tax Advisor</h4><p>Jurisdiction-aware tax guidance.</p>
+      <ul class="li"><li>Income, deductions, offsets</li><li>Super / RRSP / KiwiSaver caps</li><li>CGT, franking, negative gearing</li><li>Estimated refund / liability</li></ul></div>
+    <div class="card feat"><div class="ico l">📈</div><h4>Financial Advisor</h4><p>Wealth & retirement planning.</p>
+      <ul class="li"><li>Investment & ETF strategy</li><li>Retirement projections</li><li>Budgeting frameworks</li><li>Debt payoff modelling</li></ul></div>
+    <div class="card feat"><div class="ico s">🏠</div><h4>Mortgage Advisor</h4><p>Borrowing & amortization.</p>
+      <ul class="li"><li>Repayment calculator</li><li>Offset / redraw modelling</li><li>Fixed vs variable analysis</li><li>Serviceability & LVR</li></ul></div>
+    <div class="card feat"><div class="ico u">📒</div><h4>AI Bookkeeper</h4><p>Income, expenses, P&L.</p>
+      <ul class="li"><li>Auto-categorisation</li><li>GST / BAS tracking</li><li>P&L & cash-flow reports</li><li>Tax-deductible flags</li></ul></div>
+    <div class="card feat"><div class="ico p">📊</div><h4>Dashboard</h4><p>Whole-of-wealth view.</p>
+      <ul class="li"><li>Net worth & health score</li><li>Goal progress</li><li>Alerts & insights</li><li>Recent activity</li></ul></div>
+    <div class="card feat"><div class="ico r">📄</div><h4>Documents & Banks</h4><p>Ingest & extract.</p>
+      <ul class="li"><li>PDF / image / CSV upload</li><li>AI data extraction</li><li>Open banking (Basiq/Akahu/Plaid)</li><li>Auto-import transactions</li></ul></div>
+  </div>
 
-  <div class="grid-auto" style="margin-bottom:32px">
-    <div class="agent-card">
-      <div class="agent-icon" style="background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.25)">🧾</div>
-      <div class="agent-name">Tax Advisor</div>
-      <div class="agent-role"><span class="badge badge-gold">CRA · IRS Expert</span></div>
-      <ul class="agent-features">
-        <li>T1/T4/RRSP/TFSA/FHSA guidance</li>
-        <li>Capital gains & dividend treatment</li>
-        <li>Self-employment expense deductions</li>
-        <li>Cross-border taxation (CA/US)</li>
-        <li>Estimated tax owing calculator</li>
-        <li>Filing deadline alerts</li>
-      </ul>
+  <!-- Onboarding flow -->
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-title">🧭 Onboarding Workflow — Branching by Entity Type</div>
+
+    <!-- shared head -->
+    <div class="flow" style="margin-bottom:14px">
+      <div class="node">Sign up</div><span class="arr">→</span>
+      <div class="node" style="background:var(--gold-soft);border-color:#f0dcae">⚖️ Disclaimer<br/>+ Terms gate</div><span class="arr">→</span>
+      <div class="node" style="background:var(--primary-soft);border-color:#d6dcfb">Individual<br/>or SME?</div><span class="arr">→</span>
+      <div class="node">Country<br/>🇦🇺🇳🇿🇨🇦🇺🇸</div>
     </div>
-    <div class="agent-card">
-      <div class="agent-icon" style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25)">📈</div>
-      <div class="agent-name">Financial Advisor</div>
-      <div class="agent-role"><span class="badge badge-green">CFP · Wealth Planning</span></div>
-      <ul class="agent-features">
-        <li>RRSP/TFSA optimization strategy</li>
-        <li>Index ETF recommendations (XEQT, VBAL)</li>
-        <li>Retirement income planning</li>
-        <li>CPP/OAS maximization</li>
-        <li>Compound growth projections</li>
-        <li>Debt payoff strategies</li>
-      </ul>
+
+    <!-- two branches -->
+    <div class="grid g2">
+      <!-- Individual -->
+      <div style="border:1px solid #d6dcfb;border-radius:12px;padding:14px;background:var(--primary-soft)">
+        <div style="font-size:12px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">👤 Individual path</div>
+        <ul class="li" style="margin-top:0">
+          <li><b>Income sources</b> — one job · multiple jobs · side hustle · ABN · investments · rental (multi-select)</li>
+          <li><b>Amount per source</b> → live auto-total</li>
+          <li><b>Life context</b> — age · dependents · home owner/renter</li>
+          <li><b>Expenses</b> — monthly spend → savings rate</li>
+          <li><b>Assets</b> — super/KiwiSaver/RRSP · savings · property</li>
+          <li><b>Debts</b> — mortgage · cards · HECS/student · loans</li>
+          <li><b>Goals + risk tolerance</b></li>
+        </ul>
+      </div>
+      <!-- SME -->
+      <div style="border:1px solid #e3cffb;border-radius:12px;padding:14px;background:var(--purple-soft)">
+        <div style="font-size:12px;font-weight:800;color:#8b3fd8;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">🏢 SME / Business path</div>
+        <ul class="li" style="margin-top:0">
+          <li><b>Business name</b></li>
+          <li><b>Structure</b> — sole trader · company · partnership · trust</li>
+          <li><b>Industry</b></li>
+          <li><b>Annual revenue</b></li>
+          <li><b>GST / BAS</b> registration status</li>
+          <li><b>Employees</b> — headcount & super guarantee</li>
+          <li><b>Business goals</b> & cash-flow targets</li>
+        </ul>
+      </div>
     </div>
-    <div class="agent-card">
-      <div class="agent-icon" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25)">🏠</div>
-      <div class="agent-name">Mortgage Advisor</div>
-      <div class="agent-role"><span class="badge badge-blue">Mortgage Specialist</span></div>
-      <ul class="agent-features">
-        <li>Full amortization schedules</li>
-        <li>Fixed vs variable rate analysis</li>
-        <li>Stress test qualification</li>
-        <li>Refinancing break-even calc</li>
-        <li>FHSA / Home Buyers' Plan</li>
-        <li>Prepayment strategy modelling</li>
-      </ul>
-    </div>
-    <div class="agent-card">
-      <div class="agent-icon" style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25)">📒</div>
-      <div class="agent-name">AI Bookkeeper</div>
-      <div class="agent-role"><span class="badge badge-purple">Accounting · P&L</span></div>
-      <ul class="agent-features">
-        <li>Transaction categorization</li>
-        <li>Monthly P&L statements</li>
-        <li>HST/GST input tax credits</li>
-        <li>Budget variance analysis</li>
-        <li>Savings rate tracking</li>
-        <li>Year-end audit preparation</li>
-      </ul>
-    </div>
-    <div class="agent-card">
-      <div class="agent-icon" style="background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.25)">✦</div>
-      <div class="agent-name">General Advisor</div>
-      <div class="agent-role"><span class="badge badge-cyan">Orchestrator</span></div>
-      <ul class="agent-features">
-        <li>Overall financial health scoring</li>
-        <li>Cross-domain advice coordination</li>
-        <li>Goal setting & tracking</li>
-        <li>Financial literacy education</li>
-        <li>Alert generation</li>
-        <li>Onboarding & profiling</li>
-      </ul>
+
+    <!-- converge -->
+    <div class="ac" style="margin:12px 0 6px">↓ both paths converge ↓</div>
+    <div class="flow">
+      <div class="node">Review<br/>summary</div><span class="arr">→</span>
+      <div class="node" style="background:var(--lime-soft);border-color:#cce8bd;flex:2">⑪ System builds projection → writes to <b>ALL tabs</b>:<br/>Dashboard (net worth) · Tax profile · Financial profile · Goals · Alerts</div>
     </div>
   </div>
 
-  <!-- Prompt caching strategy -->
-  <div class="card">
-    <div class="card-title"><span class="dot"></span> Prompt Caching Strategy</div>
-    <div class="grid-3">
-      <div>
-        <h4 style="font-size:13px;margin-bottom:8px;color:var(--gold)">System Block Caching</h4>
-        <p style="font-size:12px;color:var(--muted)">Each agent's ~800-token system prompt is marked <code>cache_control: ephemeral</code>. Cached for 5 minutes — identical across all user sessions for that agent.</p>
-      </div>
-      <div>
-        <h4 style="font-size:13px;margin-bottom:8px;color:var(--gold)">Cost Reduction</h4>
-        <p style="font-size:12px;color:var(--muted)">System prompt costs drop ~90% after first cache hit. At scale (1000 users × 10 messages/day), saves ~$50/day in API costs vs uncached.</p>
-      </div>
-      <div>
-        <h4 style="font-size:13px;margin-bottom:8px;color:var(--gold)">Context Injection</h4>
-        <p style="font-size:12px;color:var(--muted)">User's financial profile (income, accounts, goals) is appended after the cached block as dynamic context, personalizing each response.</p>
-      </div>
-    </div>
-  </div>
-</div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════ DOCUMENTS -->
-<section id="documents">
-<div class="wrapper">
-  <div class="section-label">Document Intelligence</div>
-  <div class="section-title">Upload & Analysis Pipeline</div>
-  <p class="section-desc">Claude's vision capability reads bank statements, salary slips, tax forms, and investment statements — extracting structured data automatically.</p>
-
-  <div class="grid-2" style="margin-bottom:32px">
-    <!-- Upload flow -->
+  <!-- Use cases -->
+  <div class="grid g2">
     <div class="card">
-      <div class="card-title"><span class="dot"></span> Document Upload Flow</div>
-      <div class="flow-step">
-        <div class="flow-num">1</div>
-        <div class="flow-content">
-          <h4>File Validation</h4>
-          <p>MIME type check (PDF/JPG/PNG/CSV), 20MB size limit, malformed file rejection</p>
-        </div>
-      </div>
-      <div class="flow-step">
-        <div class="flow-num">2</div>
-        <div class="flow-content">
-          <h4>Secure Storage</h4>
-          <p>Stored in Supabase Storage bucket <code>financial-docs</code> under user's UUID prefix. Private RLS policy.</p>
-        </div>
-      </div>
-      <div class="flow-step">
-        <div class="flow-num">3</div>
-        <div class="flow-content">
-          <h4>Claude Vision Extraction</h4>
-          <p>PDF/images sent as base64 to Claude claude-sonnet-4-6 with structured extraction prompt. Returns typed JSON.</p>
-        </div>
-      </div>
-      <div class="flow-step">
-        <div class="flow-num">4</div>
-        <div class="flow-content">
-          <h4>Auto-Import</h4>
-          <p>Bank statement transactions auto-imported into Bookkeeper. Salary slip income added to financial profile.</p>
-        </div>
-      </div>
-      <div class="flow-step">
-        <div class="flow-num">5</div>
-        <div class="flow-content">
-          <h4>AI Analysis Summary</h4>
-          <p>Plain-language summary stored alongside structured JSON data for display in Document Library.</p>
-        </div>
-      </div>
+      <div class="card-title">👤 Individual — Use Cases</div>
+      <ul class="li">
+        <li>Understand my tax position and find missed deductions</li>
+        <li>Project when I can afford a home deposit</li>
+        <li>Optimise super / KiwiSaver / RRSP contributions</li>
+        <li>Track spending and lift my savings rate</li>
+        <li>Model mortgage repayment & offset scenarios</li>
+        <li>Set and track financial goals</li>
+      </ul>
     </div>
-
-    <!-- Supported docs -->
     <div class="card">
-      <div class="card-title"><span class="dot"></span> Supported Document Types</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div style="padding:12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
-          <div style="font-size:18px;margin-bottom:4px">🏦</div>
-          <div style="font-size:12px;font-weight:600">Bank Statement</div>
-          <div style="font-size:11px;color:var(--muted)">PDF or CSV export from any bank. Auto-extracts all transactions.</div>
-        </div>
-        <div style="padding:12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
-          <div style="font-size:18px;margin-bottom:4px">💼</div>
-          <div style="font-size:12px;font-weight:600">Salary Slip / Pay Stub</div>
-          <div style="font-size:11px;color:var(--muted)">Gross pay, net pay, CPP, EI, tax deducted, employer.</div>
-        </div>
-        <div style="padding:12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
-          <div style="font-size:18px;margin-bottom:4px">🧾</div>
-          <div style="font-size:12px;font-weight:600">T4 / T1 / W-2 / 1040</div>
-          <div style="font-size:11px;color:var(--muted)">Tax year, income, tax owing/refund, RRSP contributions.</div>
-        </div>
-        <div style="padding:12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
-          <div style="font-size:18px;margin-bottom:4px">📈</div>
-          <div style="font-size:12px;font-weight:600">Investment Statement</div>
-          <div style="font-size:11px;color:var(--muted)">Portfolio value, holdings breakdown, realized gains.</div>
-        </div>
-        <div style="padding:12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
-          <div style="font-size:18px;margin-bottom:4px">🏠</div>
-          <div style="font-size:12px;font-weight:600">Mortgage Statement</div>
-          <div style="font-size:11px;color:var(--muted)">Balance, interest paid, principal, lender details.</div>
-        </div>
-        <div style="padding:12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
-          <div style="font-size:18px;margin-bottom:4px">🧾</div>
-          <div style="font-size:12px;font-weight:600">Receipts</div>
-          <div style="font-size:11px;color:var(--muted)">Photo receipts for expense tracking & tax deductions.</div>
-        </div>
-      </div>
-
-      <div class="note" style="margin-top:16px">
-        <strong>Bank CSV Guide:</strong> Built-in step-by-step instructions for TD, RBC, Scotiabank, BMO, CIBC, Chase, BofA, Wells Fargo and more.
-      </div>
+      <div class="card-title">🏢 SME / Business — Use Cases</div>
+      <ul class="li">
+        <li>Track income & expenses for the business</li>
+        <li>Calculate & set aside GST / BAS</li>
+        <li>Generate P&L and cash-flow statements</li>
+        <li>Identify deductible business expenses</li>
+        <li>Understand structure-specific tax obligations</li>
+        <li>Monitor super guarantee for employees</li>
+      </ul>
     </div>
   </div>
+</div>
+</section>
 
-  <!-- Bank connections -->
+<!-- ════════ NON-FUNCTIONAL ════════ -->
+<section id="nonfunctional">
+<div class="wrap">
+  <div class="sec-head">
+    <span class="sec-tag nf">02 · Non-Functional Architecture</span>
+    <h2>How well the system behaves</h2>
+    <p>Quality attributes — the "-ilities" that define performance, security, reliability and compliance.</p>
+  </div>
+
+  <div class="grid g3" style="margin-bottom:18px">
+    <div class="card feat"><div class="ico p">⚡</div><h4>Performance</h4>
+      <ul class="li"><li>&lt;100ms TTFB (edge CDN)</li><li>Streaming AI responses (SSE)</li><li>DB queries &lt;15ms (indexed)</li><li>RSC server rendering</li></ul></div>
+    <div class="card feat"><div class="ico l">📈</div><h4>Scalability</h4>
+      <ul class="li"><li>Serverless auto-scale</li><li>Stateless API routes</li><li>Connection pooling</li><li>Horizontal by default</li></ul></div>
+    <div class="card feat"><div class="ico s">🟢</div><h4>Availability</h4>
+      <ul class="li"><li>99.9% uptime target</li><li>Global edge redundancy</li><li>Managed DB failover</li><li>Graceful degradation</li></ul></div>
+    <div class="card feat"><div class="ico r">🔒</div><h4>Security</h4>
+      <ul class="li"><li>TLS 1.3 + AES-256</li><li>Row-Level Security</li><li>JWT auth, short expiry</li><li>Secrets server-only</li></ul></div>
+    <div class="card feat"><div class="ico g">⚖️</div><h4>Compliance</h4>
+      <ul class="li"><li>General-info positioning</li><li>ASIC/FMCA warnings</li><li>Privacy Act / PIPEDA / CCPA</li><li>Audit logging</li></ul></div>
+    <div class="card feat"><div class="ico u">♿</div><h4>Usability & A11y</h4>
+      <ul class="li"><li>WCAG AA contrast</li><li>Responsive mobile-first</li><li>Progressive disclosure</li><li>Keyboard navigable</li></ul></div>
+  </div>
+
+  <!-- NFR targets table -->
   <div class="card">
-    <div class="card-title"><span class="dot"></span> Bank Connection Architecture (Plaid)</div>
-    <div class="grid-3">
-      <div class="flow-step" style="flex-direction:column;border:none;background:var(--surface2);border-radius:10px;padding:16px">
-        <div style="font-size:24px;margin-bottom:8px">🔑</div>
-        <h4 style="font-size:13px;margin-bottom:4px">Link Token Flow</h4>
-        <p style="font-size:12px;color:var(--muted)"><code>POST /api/plaid/link-token</code> → Plaid API creates one-time link token → returned to browser to open Plaid Link widget</p>
-      </div>
-      <div class="flow-step" style="flex-direction:column;border:none;background:var(--surface2);border-radius:10px;padding:16px">
-        <div style="font-size:24px;margin-bottom:8px">🔄</div>
-        <h4 style="font-size:13px;margin-bottom:4px">Token Exchange</h4>
-        <p style="font-size:12px;color:var(--muted)">User authenticates bank → Plaid returns <code>public_token</code> → server exchanges for permanent <code>access_token</code> stored encrypted in Supabase</p>
-      </div>
-      <div class="flow-step" style="flex-direction:column;border:none;background:var(--surface2);border-radius:10px;padding:16px">
-        <div style="font-size:24px;margin-bottom:8px">⚡</div>
-        <h4 style="font-size:13px;margin-bottom:4px">Transaction Sync</h4>
-        <p style="font-size:12px;color:var(--muted)">Plaid webhooks trigger on new transactions → <code>/api/plaid/webhook</code> → auto-import to Bookkeeper with AI categorization</p>
+    <div class="card-title">🎯 Non-Functional Requirements & Targets</div>
+    <div class="scrollx">
+    <table>
+      <tr><th>Attribute</th><th>Requirement</th><th>Target / SLA</th><th>How it's met</th></tr>
+      <tr><td><span class="q">Performance</span></td><td>Page load & response time</td><td>LCP &lt;2.5s · API p95 &lt;500ms</td><td>Edge CDN, RSC, streaming, caching</td></tr>
+      <tr><td><span class="q">Availability</span></td><td>Service uptime</td><td>99.9% / month</td><td>Serverless + managed Postgres failover</td></tr>
+      <tr><td><span class="q">Scalability</span></td><td>Concurrent users</td><td>10k+ without rework</td><td>Stateless functions, auto-scale</td></tr>
+      <tr><td><span class="q">Security</span></td><td>Data protection</td><td>Zero cross-tenant access</td><td>RLS on every table, JWT, encryption</td></tr>
+      <tr><td><span class="q">Privacy</span></td><td>Regulatory compliance</td><td>APP / Privacy Act 2020 / PIPEDA / CCPA</td><td>Consent, access/delete rights, retention</td></tr>
+      <tr><td><span class="q">Reliability</span></td><td>Data integrity</td><td>ACID, no data loss</td><td>Postgres transactions, daily backups</td></tr>
+      <tr><td><span class="q">Maintainability</span></td><td>Code quality</td><td>Typed, modular</td><td>TypeScript end-to-end, component arch</td></tr>
+      <tr><td><span class="q">Observability</span></td><td>Monitoring</td><td>Full-stack tracing</td><td>Analytics, logs, advisor token metrics</td></tr>
+      <tr><td><span class="q">Cost</span></td><td>Operating efficiency</td><td>&lt;$0.01 / active user / day</td><td>Free-tier AI (Groq/Ollama), prompt caching</td></tr>
+      <tr><td><span class="q">Portability</span></td><td>Vendor flexibility</td><td>Swappable AI & host</td><td>Provider abstraction (Groq/Ollama/Anthropic)</td></tr>
+    </table>
+    </div>
+  </div>
+
+  <div class="note"><b>Regulatory stance:</b> The platform is deliberately positioned as a general-information and educational tool — not personal financial advice — which keeps it outside AFSL (AU) / FAP (NZ) / RIA (CA·US) licensing requirements, provided the General Advice Warning is shown and no personalised product recommendations are made.</div>
+</div>
+</section>
+
+<!-- ════════ TECHNICAL ════════ -->
+<section id="technical">
+<div class="wrap">
+  <div class="sec-head">
+    <span class="sec-tag tech">03 · Technical Architecture</span>
+    <h2>How the system is built</h2>
+    <p>The stack, layers, components, integrations and runtime topology.</p>
+  </div>
+
+  <!-- Layered diagram -->
+  <div class="card" style="margin-bottom:22px">
+    <div class="card-title">🏗️ System Topology (C4 — Container View)</div>
+
+    <div class="layer" style="border-color:#d6dcfb">
+      <span class="layer-lbl" style="color:var(--primary)">Client · Browser</span>
+      <div class="boxes">
+        <div class="box"><div class="e">🖥️</div><div class="n">Next.js UI</div><div class="d">React 18 · RSC</div></div>
+        <div class="box"><div class="e">🎨</div><div class="n">Tailwind</div><div class="d">Design system</div></div>
+        <div class="box"><div class="e">💬</div><div class="n">Chat UI</div><div class="d">SSE streaming</div></div>
+        <div class="box"><div class="e">🧭</div><div class="n">Onboarding</div><div class="d">Wizard</div></div>
       </div>
     </div>
-    <div style="margin-top:16px;padding:12px;background:var(--surface2);border-radius:10px;display:flex;gap:24px;flex-wrap:wrap">
-      <span style="font-size:12px;color:var(--muted)">🇨🇦 <strong style="color:var(--text)">Canadian banks:</strong> TD, RBC, Scotiabank, BMO, CIBC, Desjardins, National Bank</span>
-      <span style="font-size:12px;color:var(--muted)">🇺🇸 <strong style="color:var(--text)">US banks:</strong> Chase, BofA, Wells Fargo, Citi, Capital One + 12,000 more</span>
+    <div class="ac">↕ HTTPS · Server Components · Server Actions</div>
+
+    <div class="layer" style="border-color:#bde9fb">
+      <span class="layer-lbl" style="color:#0c8fc7">Application · Next.js App Router</span>
+      <div class="boxes">
+        <div class="box"><div class="e">💬</div><div class="n">/api/chat</div><div class="d">AI streaming</div></div>
+        <div class="box"><div class="e">📤</div><div class="n">/api/documents</div><div class="d">Upload + extract</div></div>
+        <div class="box"><div class="e">🔐</div><div class="n">/auth</div><div class="d">Sessions</div></div>
+        <div class="box"><div class="e">🧩</div><div class="n">Middleware</div><div class="d">Route guards</div></div>
+      </div>
+    </div>
+    <div class="ac">↕ SDKs · provider abstraction</div>
+
+    <div class="layer" style="border-color:#e3cffb">
+      <span class="layer-lbl" style="color:#8b3fd8">Services · External</span>
+      <div class="boxes">
+        <div class="box"><div class="e">🗄️</div><div class="n">Supabase</div><div class="d">Postgres·Auth·Storage</div></div>
+        <div class="box"><div class="e">🤖</div><div class="n">AI Providers</div><div class="d">Groq·Ollama·Anthropic</div></div>
+        <div class="box"><div class="e">🏦</div><div class="n">Open Banking</div><div class="d">Basiq·Akahu·Plaid</div></div>
+        <div class="box"><div class="e">📊</div><div class="n">Analytics</div><div class="d">Web vitals</div></div>
+      </div>
+    </div>
+    <div class="ac">↕ Global edge network</div>
+
+    <div class="layer" style="border-color:#cce8bd">
+      <span class="layer-lbl" style="color:#4e9128">Infrastructure · Edge / Cloud</span>
+      <div class="boxes">
+        <div class="box"><div class="e">▲</div><div class="n">Hosting</div><div class="d">Vercel / CF Pages</div></div>
+        <div class="box"><div class="e">🌍</div><div class="n">CDN + DNS</div><div class="d">Cloudflare</div></div>
+        <div class="box"><div class="e">🔒</div><div class="n">WAF / DDoS</div><div class="d">Edge security</div></div>
+        <div class="box"><div class="e">📦</div><div class="n">Object Storage</div><div class="d">Private bucket</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tech stack -->
+  <div class="grid g3" style="margin-bottom:22px">
+    <div class="card">
+      <div class="card-title">Frontend</div>
+      <ul class="ck"><li>Next.js 14 (App Router, RSC)</li><li>React 18 + TypeScript</li><li>Tailwind CSS design system</li><li>Radix UI primitives</li><li>Recharts (financial charts)</li><li>lucide-react icons</li></ul>
+    </div>
+    <div class="card">
+      <div class="card-title">Backend & Data</div>
+      <ul class="ck"><li>Supabase Postgres 15</li><li>Row-Level Security (RLS)</li><li>Supabase Auth (JWT)</li><li>Supabase Storage (private)</li><li>Next.js API routes</li><li>pdf-parse / sips extraction</li></ul>
+    </div>
+    <div class="card">
+      <div class="card-title">AI & Integrations</div>
+      <ul class="ck"><li>Groq (default · free)</li><li>Ollama (local · free)</li><li>Anthropic Claude (premium)</li><li>Prompt caching</li><li>Basiq · Akahu · Plaid</li><li>Provider abstraction layer</li></ul>
+    </div>
+  </div>
+
+  <!-- AI agent architecture -->
+  <div class="card">
+    <div class="card-title">🤖 AI Agent Architecture</div>
+    <div class="flow" style="margin-bottom:14px">
+      <div class="node">User question<br/>+ context</div><span class="arr">→</span>
+      <div class="node">Agent router<br/>(tax/fin/mortgage/bk)</div><span class="arr">→</span>
+      <div class="node">System prompt<br/>(cached, country-aware)</div><span class="arr">→</span>
+      <div class="node">Provider<br/>(Groq/Ollama/Anthropic)</div><span class="arr">→</span>
+      <div class="node" style="background:var(--primary-soft);border-color:#d6dcfb">Streamed<br/>response</div>
+    </div>
+    <div class="grid g3">
+      <div><span class="badge b-p">Caching</span><p style="font-size:12px;color:var(--muted);margin-top:6px">Per-agent system prompts are cached — repeat queries cost up to 90% fewer tokens.</p></div>
+      <div><span class="badge b-g">Context injection</span><p style="font-size:12px;color:var(--muted);margin-top:6px">User's financial profile is appended after the cache boundary for personalised answers.</p></div>
+      <div><span class="badge b-l">Portability</span><p style="font-size:12px;color:var(--muted);margin-top:6px">One interface, three providers — switch via env var with zero code change.</p></div>
     </div>
   </div>
 </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════ DATABASE -->
-<section id="database">
-<div class="wrapper">
-  <div class="section-label">Data Architecture</div>
-  <div class="section-title">PostgreSQL Schema</div>
-  <p class="section-desc">12 tables with Row Level Security on every table — users can only ever read/write their own data.</p>
-
-  <div class="grid-3" style="margin-bottom:24px">
-    <div class="table-card">
-      <div class="table-header">
-        <span style="font-size:16px">👤</span>
-        <span class="table-name">profiles</span>
-        <span class="badge badge-green" style="margin-left:auto">Core</span>
-      </div>
-      <div class="table-body">
-        <div class="field"><span class="field-pk">🔑 id</span><span class="field-type">uuid (FK auth.users)</span></div>
-        <div class="field"><span class="field-name">email</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">full_name</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">country</span><span class="field-type">text (CA/US)</span></div>
-        <div class="field"><span class="field-name">currency</span><span class="field-type">text</span></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <span style="font-size:16px">💰</span>
-        <span class="table-name">financial_profiles</span>
-        <span class="badge badge-gold" style="margin-left:auto">Finance</span>
-      </div>
-      <div class="table-body">
-        <div class="field"><span class="field-name">employment_type</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">annual_income</span><span class="field-type">numeric(15,2)</span></div>
-        <div class="field"><span class="field-name">filing_status</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">risk_tolerance</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">net_worth</span><span class="field-type">numeric(15,2)</span></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <span style="font-size:16px">🏦</span>
-        <span class="table-name">accounts</span>
-        <span class="badge badge-blue" style="margin-left:auto">Assets</span>
-      </div>
-      <div class="table-body">
-        <div class="field"><span class="field-name">name</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">type</span><span class="field-type">text (rrsp/tfsa/...)</span></div>
-        <div class="field"><span class="field-name">balance</span><span class="field-type">numeric(15,2)</span></div>
-        <div class="field"><span class="field-name">is_asset</span><span class="field-type">boolean</span></div>
-        <div class="field"><span class="field-name">interest_rate</span><span class="field-type">numeric(5,4)</span></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <span style="font-size:16px">📊</span>
-        <span class="table-name">transactions</span>
-        <span class="badge badge-purple" style="margin-left:auto">Bookkeeper</span>
-      </div>
-      <div class="table-body">
-        <div class="field"><span class="field-name">date</span><span class="field-type">date</span></div>
-        <div class="field"><span class="field-name">description</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">amount</span><span class="field-type">numeric (±)</span></div>
-        <div class="field"><span class="field-name">category</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">is_tax_deductible</span><span class="field-type">boolean</span></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <span style="font-size:16px">🏠</span>
-        <span class="table-name">mortgages</span>
-        <span class="badge badge-cyan" style="margin-left:auto">Mortgage</span>
-      </div>
-      <div class="table-body">
-        <div class="field"><span class="field-name">loan_amount</span><span class="field-type">numeric(15,2)</span></div>
-        <div class="field"><span class="field-name">interest_rate</span><span class="field-type">numeric(5,4)</span></div>
-        <div class="field"><span class="field-name">amortization_years</span><span class="field-type">int</span></div>
-        <div class="field"><span class="field-name">payment_frequency</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">is_variable_rate</span><span class="field-type">boolean</span></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <span style="font-size:16px">🧾</span>
-        <span class="table-name">tax_profiles</span>
-        <span class="badge badge-orange" style="margin-left:auto">Tax</span>
-      </div>
-      <div class="table-body">
-        <div class="field"><span class="field-name">tax_year</span><span class="field-type">int</span></div>
-        <div class="field"><span class="field-name">employment_income</span><span class="field-type">numeric(15,2)</span></div>
-        <div class="field"><span class="field-name">rrsp_contributions</span><span class="field-type">numeric(15,2)</span></div>
-        <div class="field"><span class="field-name">expected_refund</span><span class="field-type">numeric(15,2)</span></div>
-        <div class="field"><span class="field-name">filing_status</span><span class="field-type">text</span></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <span style="font-size:16px">🎯</span>
-        <span class="table-name">goals</span>
-        <span class="badge badge-green" style="margin-left:auto">Goals</span>
-      </div>
-      <div class="table-body">
-        <div class="field"><span class="field-name">name, type</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">target_amount</span><span class="field-type">numeric(15,2)</span></div>
-        <div class="field"><span class="field-name">current_amount</span><span class="field-type">numeric(15,2)</span></div>
-        <div class="field"><span class="field-name">target_date</span><span class="field-type">date</span></div>
-        <div class="field"><span class="field-name">priority</span><span class="field-type">text (low/med/high)</span></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <span style="font-size:16px">📄</span>
-        <span class="table-name">documents</span>
-        <span class="badge badge-gold" style="margin-left:auto">Docs</span>
-      </div>
-      <div class="table-body">
-        <div class="field"><span class="field-name">file_name, file_type</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">storage_path</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">document_type</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">extracted_data</span><span class="field-type">jsonb</span></div>
-        <div class="field"><span class="field-name">status</span><span class="field-type">text</span></div>
-      </div>
-    </div>
-    <div class="table-card">
-      <div class="table-header">
-        <span style="font-size:16px">🏦</span>
-        <span class="table-name">bank_connections</span>
-        <span class="badge badge-blue" style="margin-left:auto">Plaid</span>
-      </div>
-      <div class="table-body">
-        <div class="field"><span class="field-name">institution_name</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">plaid_access_token</span><span class="field-type">text (enc)</span></div>
-        <div class="field"><span class="field-name">plaid_item_id</span><span class="field-type">text</span></div>
-        <div class="field"><span class="field-name">last_sync_at</span><span class="field-type">timestamptz</span></div>
-        <div class="field"><span class="field-name">status</span><span class="field-type">text</span></div>
-      </div>
-    </div>
+<!-- ════════ DATA MODEL ════════ -->
+<section id="data">
+<div class="wrap">
+  <div class="sec-head">
+    <span class="sec-tag tech">Data Architecture</span>
+    <h2>Data Model</h2>
+    <p>14 tables, Row-Level Security on every one — users can only ever touch their own data.</p>
   </div>
-
-  <div class="note">
-    <strong>Row Level Security:</strong> Every table has RLS enabled with policies ensuring <code>auth.uid() = user_id</code>. No user can ever access another user's financial data — enforced at the database level, not application level.
+  <div class="grid g4">
+    <div class="tbl-card"><div class="tbl-h">👤 profiles</div><div class="tbl-b">
+      <div class="fld"><span class="k">id</span> <span class="n">uuid PK</span></div>
+      <div class="fld"><span class="n">entity_type</span> <span class="f">ind/sme</span></div>
+      <div class="fld"><span class="n">country, currency</span></div>
+      <div class="fld"><span class="n">onboarding_completed</span></div>
+      <div class="fld"><span class="n">accepted_terms_at</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">💰 financial_profiles</div><div class="tbl-b">
+      <div class="fld"><span class="f">user_id</span></div>
+      <div class="fld"><span class="n">annual_income</span></div>
+      <div class="fld"><span class="n">income_sources</span> <span class="f">jsonb</span></div>
+      <div class="fld"><span class="n">age, dependents</span></div>
+      <div class="fld"><span class="n">risk_tolerance</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">🏦 accounts</div><div class="tbl-b">
+      <div class="fld"><span class="n">name, type</span></div>
+      <div class="fld"><span class="n">balance</span></div>
+      <div class="fld"><span class="n">is_asset</span></div>
+      <div class="fld"><span class="n">interest_rate</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">📊 transactions</div><div class="tbl-b">
+      <div class="fld"><span class="n">date, amount</span></div>
+      <div class="fld"><span class="n">category, type</span></div>
+      <div class="fld"><span class="n">is_tax_deductible</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">🧾 tax_profiles</div><div class="tbl-b">
+      <div class="fld"><span class="n">tax_year</span></div>
+      <div class="fld"><span class="n">employment_income</span></div>
+      <div class="fld"><span class="n">super / kiwisaver</span></div>
+      <div class="fld"><span class="n">hecs_help_debt</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">🏠 mortgages</div><div class="tbl-b">
+      <div class="fld"><span class="n">loan_amount, rate</span></div>
+      <div class="fld"><span class="n">amortization_years</span></div>
+      <div class="fld"><span class="n">payment_frequency</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">🎯 goals</div><div class="tbl-b">
+      <div class="fld"><span class="n">name, type</span></div>
+      <div class="fld"><span class="n">target / current</span></div>
+      <div class="fld"><span class="n">priority, status</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">📄 documents</div><div class="tbl-b">
+      <div class="fld"><span class="n">file_name, type</span></div>
+      <div class="fld"><span class="n">extracted_data</span> <span class="f">jsonb</span></div>
+      <div class="fld"><span class="n">status</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">🏦 bank_connections</div><div class="tbl-b">
+      <div class="fld"><span class="n">provider</span></div>
+      <div class="fld"><span class="n">institution_name</span></div>
+      <div class="fld"><span class="n">access_token</span> <span class="f">enc</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">💬 conversations</div><div class="tbl-b">
+      <div class="fld"><span class="n">agent, title</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">✉️ messages</div><div class="tbl-b">
+      <div class="fld"><span class="n">role, content</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">🔔 alerts</div><div class="tbl-b">
+      <div class="fld"><span class="n">type, severity</span></div>
+      <div class="fld"><span class="n">is_read</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">🏷️ categories</div><div class="tbl-b">
+      <div class="fld"><span class="n">name, type</span></div>
+      <div class="fld"><span class="n">is_tax_deductible</span></div>
+    </div></div>
+    <div class="tbl-card"><div class="tbl-h">📋 audit_log</div><div class="tbl-b">
+      <div class="fld"><span class="n">action, entity</span></div>
+      <div class="fld"><span class="n">ip_address</span></div>
+      <div class="fld"><span class="n">created_at</span></div>
+    </div></div>
   </div>
+  <div class="ok" style="margin-top:18px">🔒 <b>Every table</b> has RLS enabled with <code>auth.uid() = user_id</code> policies — data isolation is enforced at the database layer, not just the app.</div>
 </div>
 </section>
 
-<!-- ═══════════════════════════════════════════════════════ SECURITY -->
+<!-- ════════ SECURITY ════════ -->
 <section id="security">
-<div class="wrapper">
-  <div class="section-label">Security Architecture</div>
-  <div class="section-title">Defense in Depth</div>
-  <p class="section-desc">Financial data requires the highest security standards. Every layer is hardened.</p>
-
-  <div class="grid-2">
+<div class="wrap">
+  <div class="sec-head">
+    <span class="sec-tag nf">Security & Compliance</span>
+    <h2>Defense in Depth</h2>
+    <p>Layered controls for a financial-grade application.</p>
+  </div>
+  <div class="grid g2">
     <div class="card">
-      <div class="card-title"><span class="dot"></span> Authentication & Authorization</div>
-      <div class="security-item">
-        <div class="security-icon" style="background:rgba(34,197,94,.1)">🔐</div>
-        <div class="security-content">
-          <h4>Supabase Auth (JWT)</h4>
-          <p>Email/password + OAuth providers. JWT tokens with 1-hour expiry, auto-refresh via httpOnly cookies. No custom auth code.</p>
-        </div>
-      </div>
-      <div class="security-item">
-        <div class="security-icon" style="background:rgba(59,130,246,.1)">🛡️</div>
-        <div class="security-content">
-          <h4>Row Level Security (RLS)</h4>
-          <p>PostgreSQL RLS on all 12 tables. Data isolation enforced at DB level — bypass impossible even with compromised app code.</p>
-        </div>
-      </div>
-      <div class="security-item">
-        <div class="security-icon" style="background:rgba(201,168,76,.1)">🔑</div>
-        <div class="security-content">
-          <h4>API Route Guards</h4>
-          <p>Every API route validates <code>supabase.auth.getUser()</code> before processing. Server-side only — no client-side auth checks trusted.</p>
-        </div>
-      </div>
-      <div class="security-item">
-        <div class="security-icon" style="background:rgba(168,85,247,.1)">🗝️</div>
-        <div class="security-content">
-          <h4>Secret Management</h4>
-          <p>All keys in env vars only. <code>ANTHROPIC_API_KEY</code>, <code>SUPABASE_SERVICE_ROLE_KEY</code>, <code>PLAID_SECRET</code> never exposed to client. Vercel encrypted env vars in production.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><span class="dot"></span> Data & Document Security</div>
-      <div class="security-item">
-        <div class="security-icon" style="background:rgba(6,182,212,.1)">📁</div>
-        <div class="security-content">
-          <h4>Private Storage Bucket</h4>
-          <p>Supabase Storage bucket <code>financial-docs</code> is private. Files stored under <code>{user_id}/{timestamp}_{filename}</code>. RLS policy prevents cross-user access.</p>
-        </div>
-      </div>
-      <div class="security-item">
-        <div class="security-icon" style="background:rgba(239,68,68,.1)">🔒</div>
-        <div class="security-content">
-          <h4>File Validation</h4>
-          <p>MIME type whitelist (PDF/JPG/PNG/CSV only). 20MB size cap. Filename sanitization. Buffer read — no shell execution.</p>
-        </div>
-      </div>
-      <div class="security-item">
-        <div class="security-icon" style="background:rgba(34,197,94,.1)">🏦</div>
-        <div class="security-content">
-          <h4>Plaid Token Security</h4>
-          <p>Plaid access tokens stored encrypted in DB. Read-only Plaid scope requested. No payment/transfer permissions. Users can disconnect anytime.</p>
-        </div>
-      </div>
-      <div class="security-item">
-        <div class="security-icon" style="background:rgba(249,115,22,.1)">🌐</div>
-        <div class="security-content">
-          <h4>Transport Security</h4>
-          <p>TLS 1.3 enforced. HSTS headers. No HTTP fallback. CORS restricted to app domain. CSP headers prevent XSS.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="card" style="margin-top:20px">
-    <div class="card-title"><span class="dot"></span> AI Safety Guardrails</div>
-    <div class="grid-3">
-      <div>
-        <h4 style="font-size:13px;color:var(--gold);margin-bottom:6px">Scope Limitation</h4>
-        <ul class="checklist">
-          <li>Agents stay in their domain (tax agent won't give mortgage advice)</li>
-          <li>No execution of financial transactions</li>
-          <li>Always recommend licensed advisor for complex cases</li>
-        </ul>
-      </div>
-      <div>
-        <h4 style="font-size:13px;color:var(--gold);margin-bottom:6px">Disclaimer Enforcement</h4>
-        <ul class="checklist">
-          <li>"Not a substitute for professional advice" in every chat</li>
-          <li>AI output clearly labelled as AI-generated</li>
-          <li>Canadian jurisdiction default with explicit US flag</li>
-        </ul>
-      </div>
-      <div>
-        <h4 style="font-size:13px;color:var(--gold);margin-bottom:6px">Prompt Injection Defense</h4>
-        <ul class="checklist">
-          <li>System prompts cached server-side — not user-modifiable</li>
-          <li>User context injected after cache boundary</li>
-          <li>Agent type validated on server — client can't switch agents</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════ MONITORING -->
-<section id="monitoring">
-<div class="wrapper">
-  <div class="section-label">Observability & Monitoring</div>
-  <div class="section-title">Live Platform Health</div>
-  <p class="section-desc">Full-stack observability: API latency, Claude token usage, DB query performance, error rates, and user activity.</p>
-
-  <!-- Live metrics (JS-animated) -->
-  <div class="grid-4" style="margin-bottom:28px" id="metrics-grid">
-    <div class="metric-card">
-      <div class="metric-value" style="color:var(--green)" id="m-uptime">99.9%</div>
-      <div class="metric-label">Platform Uptime</div>
-      <div class="metric-trend trend-up">↑ SLA target met</div>
-      <div class="bar-container"><div class="bar-fill" id="b-uptime" style="width:99.9%;background:var(--green)"></div></div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-value" style="color:var(--gold)" id="m-latency">142ms</div>
-      <div class="metric-label">Avg API Latency</div>
-      <div class="metric-trend trend-up">↓ p95: 380ms</div>
-      <div class="bar-container"><div class="bar-fill" id="b-latency" style="width:72%;background:var(--gold)"></div></div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-value" style="color:var(--blue)" id="m-tokens">1.2M</div>
-      <div class="metric-label">Claude Tokens / Day</div>
-      <div class="metric-trend" style="color:var(--muted)">~85% cache hit rate</div>
-      <div class="bar-container"><div class="bar-fill" id="b-tokens" style="width:60%;background:var(--blue)"></div></div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-value" style="color:var(--purple)" id="m-docs">324</div>
-      <div class="metric-label">Documents Analyzed</div>
-      <div class="metric-trend trend-up">↑ +48 today</div>
-      <div class="bar-container"><div class="bar-fill" id="b-docs" style="width:54%;background:var(--purple)"></div></div>
-    </div>
-  </div>
-
-  <div class="grid-2">
-    <!-- Service health -->
-    <div class="card">
-      <div class="card-title"><span class="dot"></span> <span class="live-dot"></span> Service Health</div>
-      <div class="status-row">
-        <span class="status-name">🌐 Vercel Edge Functions</span>
-        <span class="status-ok">● Operational</span>
-      </div>
-      <div class="status-row">
-        <span class="status-name">🗄️ Supabase PostgreSQL</span>
-        <span class="status-ok" id="db-status">● Operational</span>
-      </div>
-      <div class="status-row">
-        <span class="status-name">🤖 Anthropic API</span>
-        <span class="status-ok" id="ai-status">● Operational</span>
-      </div>
-      <div class="status-row">
-        <span class="status-name">📁 Supabase Storage</span>
-        <span class="status-ok">● Operational</span>
-      </div>
-      <div class="status-row">
-        <span class="status-name">🏦 Plaid API</span>
-        <span class="status-ok">● Operational</span>
-      </div>
-      <div class="status-row">
-        <span class="status-name">🔐 Auth Service</span>
-        <span class="status-ok">● Operational</span>
-      </div>
-    </div>
-
-    <!-- API latency chart -->
-    <div class="card">
-      <div class="card-title"><span class="dot"></span> API Response Distribution</div>
-      <div style="margin-bottom:12px">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Chat API (streaming SSE)</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="bar-container" style="flex:1;height:8px"><div class="bar-fill" style="width:88%;background:linear-gradient(90deg,var(--green),var(--gold))"></div></div>
-          <span style="font-size:11px;color:var(--muted)">~200ms TTFB</span>
-        </div>
-      </div>
-      <div style="margin-bottom:12px">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Document Upload + Extraction</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="bar-container" style="flex:1;height:8px"><div class="bar-fill" style="width:55%;background:linear-gradient(90deg,var(--blue),var(--purple))"></div></div>
-          <span style="font-size:11px;color:var(--muted)">~4-8s per doc</span>
-        </div>
-      </div>
-      <div style="margin-bottom:12px">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Dashboard Load (RSC)</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="bar-container" style="flex:1;height:8px"><div class="bar-fill" style="width:92%;background:linear-gradient(90deg,var(--green),var(--cyan))"></div></div>
-          <span style="font-size:11px;color:var(--muted)">~90ms</span>
-        </div>
-      </div>
-      <div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:4px">DB Queries (avg)</div>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="bar-container" style="flex:1;height:8px"><div class="bar-fill" style="width:95%;background:var(--green)"></div></div>
-          <span style="font-size:11px;color:var(--muted)">&lt;15ms</span>
-        </div>
-      </div>
-      <!-- Sparkline chart -->
-      <div style="margin-top:16px">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Request volume (last 24h)</div>
-        <div class="sparkline" id="sparkline">
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Monitoring tools -->
-  <div class="card" style="margin-top:20px">
-    <div class="card-title"><span class="dot"></span> Monitoring Stack</div>
-    <div class="grid-4">
-      <div style="text-align:center;padding:16px">
-        <div style="font-size:32px;margin-bottom:8px">📊</div>
-        <div style="font-size:13px;font-weight:600">Vercel Analytics</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">Core Web Vitals, LCP, CLS, FID. Real user monitoring per route.</div>
-      </div>
-      <div style="text-align:center;padding:16px">
-        <div style="font-size:32px;margin-bottom:8px">🗄️</div>
-        <div style="font-size:13px;font-weight:600">Supabase Dashboard</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">Query performance, slow query log, connection pool health, DB size.</div>
-      </div>
-      <div style="text-align:center;padding:16px">
-        <div style="font-size:32px;margin-bottom:8px">🤖</div>
-        <div style="font-size:13px;font-weight:600">Anthropic Console</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">Token usage by model, cache hit rates, error rates, cost tracking.</div>
-      </div>
-      <div style="text-align:center;padding:16px">
-        <div style="font-size:32px;margin-bottom:8px">🔔</div>
-        <div style="font-size:13px;font-weight:600">Vercel Log Drains</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:4px">Real-time function logs, error alerting, request tracing across edge regions.</div>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="card-title"><span class="dot"></span> Alerting Rules</div>
-    <div class="grid-3">
-      <div class="card card-sm" style="background:var(--surface2)">
-        <div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:6px">🚨 CRITICAL</div>
-        <ul style="list-style:none;font-size:11px;color:var(--muted);space-y:4px">
-          <li style="padding:2px 0">• API error rate &gt; 5%</li>
-          <li style="padding:2px 0">• DB connection pool exhausted</li>
-          <li style="padding:2px 0">• Auth service down</li>
-          <li style="padding:2px 0">• Anthropic API timeout &gt; 30s</li>
-        </ul>
-      </div>
-      <div class="card card-sm" style="background:var(--surface2)">
-        <div style="font-size:11px;color:var(--orange);font-weight:700;margin-bottom:6px">⚠️ WARNING</div>
-        <ul style="list-style:none;font-size:11px;color:var(--muted);space-y:4px">
-          <li style="padding:2px 0">• p95 latency &gt; 2000ms</li>
-          <li style="padding:2px 0">• Document extraction failure rate &gt; 10%</li>
-          <li style="padding:2px 0">• Plaid sync errors</li>
-          <li style="padding:2px 0">• Token usage spike &gt; 3× baseline</li>
-        </ul>
-      </div>
-      <div class="card card-sm" style="background:var(--surface2)">
-        <div style="font-size:11px;color:var(--blue);font-weight:700;margin-bottom:6px">ℹ️ INFO</div>
-        <ul style="list-style:none;font-size:11px;color:var(--muted);space-y:4px">
-          <li style="padding:2px 0">• New user signup</li>
-          <li style="padding:2px 0">• Document processed successfully</li>
-          <li style="padding:2px 0">• Bank connection established</li>
-          <li style="padding:2px 0">• Goal milestone reached</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════ TECH STACK -->
-<section>
-<div class="wrapper">
-  <div class="section-label">Technology Stack</div>
-  <div class="section-title">Built on best-in-class tools</div>
-
-  <div class="grid-3">
-    <div>
-      <h3 style="font-size:13px;color:var(--gold);margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em">Frontend</h3>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div class="tech-item"><div class="tech-logo">▲</div><div><div class="tech-name">Next.js 14</div><div class="tech-desc">App Router, RSC, Server Actions, streaming</div></div></div>
-        <div class="tech-item"><div class="tech-logo">🎨</div><div><div class="tech-name">Tailwind CSS</div><div class="tech-desc">Custom dark fintech design system</div></div></div>
-        <div class="tech-item"><div class="tech-logo">◉</div><div><div class="tech-name">Radix UI</div><div class="tech-desc">Accessible headless components</div></div></div>
-        <div class="tech-item"><div class="tech-logo">📊</div><div><div class="tech-name">Recharts</div><div class="tech-desc">Financial charts & amortization graphs</div></div></div>
-      </div>
-    </div>
-    <div>
-      <h3 style="font-size:13px;color:var(--gold);margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em">Backend & Data</h3>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div class="tech-item"><div class="tech-logo">⚡</div><div><div class="tech-name">Supabase</div><div class="tech-desc">PostgreSQL, Auth, Storage, RLS</div></div></div>
-        <div class="tech-item"><div class="tech-logo">🔵</div><div><div class="tech-name">PostgreSQL</div><div class="tech-desc">12 tables, triggers, RLS policies</div></div></div>
-        <div class="tech-item"><div class="tech-logo">🏦</div><div><div class="tech-name">Plaid</div><div class="tech-desc">12,000+ bank connections CA/US</div></div></div>
-        <div class="tech-item"><div class="tech-logo">📝</div><div><div class="tech-name">TypeScript</div><div class="tech-desc">End-to-end type safety</div></div></div>
-      </div>
-    </div>
-    <div>
-      <h3 style="font-size:13px;color:var(--gold);margin-bottom:12px;text-transform:uppercase;letter-spacing:.08em">AI & Infrastructure</h3>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div class="tech-item"><div class="tech-logo">✦</div><div><div class="tech-name">Claude claude-sonnet-4-6</div><div class="tech-desc">5 specialist agents, prompt caching, vision</div></div></div>
-        <div class="tech-item"><div class="tech-logo">▲</div><div><div class="tech-name">Vercel</div><div class="tech-desc">Edge functions, global CDN, analytics</div></div></div>
-        <div class="tech-item"><div class="tech-logo">🔒</div><div><div class="tech-name">Supabase Auth</div><div class="tech-desc">JWT, OAuth, RLS integration</div></div></div>
-        <div class="tech-item"><div class="tech-logo">🌍</div><div><div class="tech-name">Edge Network</div><div class="tech-desc">&lt;100ms global TTFB</div></div></div>
-      </div>
-    </div>
-  </div>
-</div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════ DEPLOY -->
-<section id="deploy">
-<div class="wrapper">
-  <div class="section-label">Deployment & Setup</div>
-  <div class="section-title">From zero to production</div>
-
-  <div class="grid-2">
-    <div class="card">
-      <div class="card-title"><span class="dot"></span> Setup Checklist</div>
-      <ul class="checklist">
-        <li>Create Supabase project → run <code>schema.sql</code> + <code>schema_documents.sql</code></li>
-        <li>Create Storage bucket <code>financial-docs</code> (private)</li>
-        <li>Add RLS storage policy for user-scoped access</li>
-        <li>Get Anthropic API key from console.anthropic.com</li>
-        <li>Create Plaid developer account → get sandbox keys</li>
-        <li>Copy <code>.env.local.example</code> → <code>.env.local</code>, fill all keys</li>
-        <li><code>npm install</code> → <code>npm run dev</code></li>
-        <li>Push to GitHub → connect to Vercel</li>
-        <li>Add all env vars to Vercel project settings</li>
-        <li>Enable Vercel Analytics in project settings</li>
+      <div class="card-title">🔐 Security Controls</div>
+      <ul class="ck">
+        <li>TLS 1.3 in transit · AES-256 at rest</li>
+        <li>Row-Level Security on all 14 tables</li>
+        <li>JWT auth with short expiry + refresh</li>
+        <li>Server-only secrets (service role, AI keys)</li>
+        <li>Admin client isolated to server routes</li>
+        <li>File validation — MIME whitelist, 20MB cap</li>
+        <li>Private storage bucket, per-user folders</li>
+        <li>No card/credential entry permitted by design</li>
       </ul>
     </div>
     <div class="card">
-      <div class="card-title"><span class="dot"></span> Environment Variables</div>
-      <div style="font-family:'Courier New',monospace;font-size:12px;line-height:2">
-        <div><span style="color:var(--muted)"># Supabase</span></div>
-        <div><span style="color:var(--cyan)">NEXT_PUBLIC_SUPABASE_URL</span>=<span style="color:var(--green)">https://xxx.supabase.co</span></div>
-        <div><span style="color:var(--cyan)">NEXT_PUBLIC_SUPABASE_ANON_KEY</span>=<span style="color:var(--green)">eyJ...</span></div>
-        <div><span style="color:var(--cyan)">SUPABASE_SERVICE_ROLE_KEY</span>=<span style="color:var(--green)">eyJ...</span></div>
-        <div style="margin-top:8px"><span style="color:var(--muted)"># Anthropic</span></div>
-        <div><span style="color:var(--gold)">ANTHROPIC_API_KEY</span>=<span style="color:var(--green)">sk-ant-...</span></div>
-        <div style="margin-top:8px"><span style="color:var(--muted)"># Plaid (optional)</span></div>
-        <div><span style="color:var(--blue)">PLAID_CLIENT_ID</span>=<span style="color:var(--green)">your_client_id</span></div>
-        <div><span style="color:var(--blue)">PLAID_SECRET</span>=<span style="color:var(--green)">your_secret</span></div>
-        <div><span style="color:var(--blue)">PLAID_ENV</span>=<span style="color:var(--green)">sandbox|development|production</span></div>
-        <div style="margin-top:8px"><span style="color:var(--muted)"># App</span></div>
-        <div><span style="color:var(--muted)">NEXT_PUBLIC_APP_URL</span>=<span style="color:var(--green)">https://yourapp.vercel.app</span></div>
-      </div>
+      <div class="card-title">⚖️ Compliance & Standards</div>
+      <table>
+        <tr><th>Standard</th><th>Status</th></tr>
+        <tr><td>SOC 2 Type II (infra)</td><td><span class="badge b-l">Inherited</span></td></tr>
+        <tr><td>TLS 1.3 / AES-256</td><td><span class="badge b-l">Active</span></td></tr>
+        <tr><td>Row-Level Security</td><td><span class="badge b-l">Active</span></td></tr>
+        <tr><td>Privacy Act 1988 (AU)</td><td><span class="badge b-p">Aligned</span></td></tr>
+        <tr><td>Privacy Act 2020 (NZ)</td><td><span class="badge b-p">Aligned</span></td></tr>
+        <tr><td>PIPEDA (CA) · CCPA (US)</td><td><span class="badge b-p">Aligned</span></td></tr>
+        <tr><td>PCI DSS</td><td><span class="badge b-g">N/A by design</span></td></tr>
+        <tr><td>ISO 27001</td><td><span class="badge b-s">Roadmap</span></td></tr>
+      </table>
     </div>
-  </div>
-
-  <div class="note" style="margin-top:24px">
-    <strong>Note:</strong> Plaid integration requires registering your app at <strong>plaid.com/docs</strong>. Sandbox mode works immediately. Production requires Plaid approval (~1-2 weeks). You can ship the full app without Plaid — the CSV upload + manual document import path works for all users.
   </div>
 </div>
 </section>
 
-<!-- Footer -->
-<footer style="border-top:1px solid var(--border);padding:40px 0;text-align:center;color:var(--muted);font-size:12px">
-  <div class="wrapper">
-    <div style="font-size:20px;margin-bottom:8px">✦</div>
-    <p><strong style="color:var(--gold)">FinWise AI</strong> · Architecture Document · Built for Pankaj Verma</p>
-    <p style="margin-top:4px">Next.js 14 · Supabase · Claude claude-sonnet-4-6 · Vercel · Plaid</p>
+<!-- ════════ DEPLOYMENT ════════ -->
+<section id="deploy">
+<div class="wrap">
+  <div class="sec-head">
+    <span class="sec-tag tech">Deployment Architecture</span>
+    <h2>Runtime Topology</h2>
+    <p>How the platform is hosted, served, and secured in production.</p>
   </div>
+
+  <div class="grid g2" style="margin-bottom:18px">
+    <div class="card">
+      <div class="card-title">▲ Recommended — Vercel + Cloudflare</div>
+      <div class="flow" style="margin-bottom:12px">
+        <div class="node">User</div><span class="arr">→</span>
+        <div class="node">Cloudflare<br/>DNS·CDN·WAF</div><span class="arr">→</span>
+        <div class="node">Vercel<br/>Next.js + Node</div><span class="arr">→</span>
+        <div class="node">Supabase</div>
+      </div>
+      <ul class="ck">
+        <li>Full Node.js runtime — all features work</li>
+        <li>PDF/document extraction supported</li>
+        <li>Cloudflare for DNS, CDN, DDoS, WAF</li>
+        <li>Zero-config Next.js deploys</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">☁️ Alternative — Cloudflare Pages</div>
+      <div class="flow" style="margin-bottom:12px">
+        <div class="node">User</div><span class="arr">→</span>
+        <div class="node">Cloudflare<br/>Pages (edge)</div><span class="arr">→</span>
+        <div class="node">Workers<br/>(V8 isolate)</div><span class="arr">→</span>
+        <div class="node">Supabase</div>
+      </div>
+      <div class="note" style="margin-top:0"><b>Edge runtime constraint:</b> Cloudflare Workers run V8 isolates, not Node.js. The scanned-PDF path (sips/child_process/fs) and pdf-parse must be replaced with edge-compatible extraction (native PDF vision) before this path works.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🚀 CI/CD Pipeline</div>
+    <div class="flow">
+      <div class="node">git push<br/>main</div><span class="arr">→</span>
+      <div class="node">GitHub</div><span class="arr">→</span>
+      <div class="node">Build<br/>next build</div><span class="arr">→</span>
+      <div class="node">Type check<br/>+ lint</div><span class="arr">→</span>
+      <div class="node">Deploy<br/>preview</div><span class="arr">→</span>
+      <div class="node" style="background:var(--lime-soft);border-color:#cce8bd">Promote<br/>production</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<footer>
+  <div style="font-size:18px;margin-bottom:6px">✦</div>
+  <b style="color:var(--primary)">FinWise AI</b> · Architecture Blueprint · finwiseai-advisor.com<br/>
+  Next.js 14 · Supabase · Groq/Ollama/Anthropic · Cloudflare · AU·NZ·CA·US
 </footer>
 
-<!-- ═══════════════════════════════════════════════════════ LIVE MONITOR PANEL -->
-<div id="live-panel">
-  <div class="live-panel-header" onclick="togglePanel()">
-    <div class="live-panel-title">
-      <span class="live-dot"></span> Live System Monitor
-    </div>
-    <button id="toggle-panel">▼</button>
-  </div>
-  <div class="live-panel-body" id="log-container">
-    <!-- Logs injected by JS -->
-  </div>
-</div>
-
 <script>
-// ─── LIVE MONITOR ────────────────────────────────────────
-const logContainer = document.getElementById('log-container');
-let panelMinimized = false;
-
-function togglePanel() {
-  panelMinimized = !panelMinimized;
-  document.getElementById('live-panel').classList.toggle('panel-minimized', panelMinimized);
-  document.getElementById('toggle-panel').textContent = panelMinimized ? '▲' : '▼';
-}
-
-const logTemplates = [
-  { lvl: 'info',  msg: 'GET /dashboard → 200 (87ms)' },
-  { lvl: 'ai',    msg: 'Claude claude-sonnet-4-6 · tax agent · cache HIT · 142 tokens' },
-  { lvl: 'ok',    msg: 'Document analyzed: T4_2024.pdf → income: $94,200' },
-  { lvl: 'info',  msg: 'POST /api/chat → 200 · SSE stream opened' },
-  { lvl: 'ai',    msg: 'Mortgage agent · amortization calc · 25yr · 5.25%' },
-  { lvl: 'ok',    msg: 'Bank statement imported: 47 transactions → bookkeeper' },
-  { lvl: 'info',  msg: 'Supabase query: transactions.select → 12ms' },
-  { lvl: 'ai',    msg: 'Financial agent · RRSP optimization advice generated' },
-  { lvl: 'ok',    msg: 'Goal milestone: Emergency Fund 80% reached' },
-  { lvl: 'info',  msg: 'Storage upload: salary_slip_june.pdf (284KB)' },
-  { lvl: 'ai',    msg: 'Salary slip parsed: gross $7,416 · net $5,280 · tax $1,420' },
-  { lvl: 'ok',    msg: 'Plaid sync: TD Bank · 8 new transactions' },
-  { lvl: 'info',  msg: 'Auth: user session refreshed (JWT exp → +1hr)' },
-  { lvl: 'ai',    msg: 'Bookkeeper agent · P&L summary for June 2025' },
-  { lvl: 'warn',  msg: 'Document OCR: low confidence on receipt (retrying)' },
-  { lvl: 'ok',    msg: 'Tax profile updated: 2024 RRSP contribution $18,000' },
-  { lvl: 'info',  msg: 'GET /api/documents/list → 200 (34ms)' },
-  { lvl: 'ai',    msg: 'Tax agent · cache WRITE · system prompt cached' },
-  { lvl: 'ok',    msg: 'Net worth calculated: assets $342K · liabilities $218K' },
-  { lvl: 'info',  msg: 'POST /api/accounts → account created: TFSA' },
-];
-
-let logIdx = 0;
-
-function addLog() {
-  const template = logTemplates[logIdx % logTemplates.length];
-  logIdx++;
-
-  const now = new Date();
-  const ts = now.toTimeString().slice(0,8);
-
-  const line = document.createElement('div');
-  line.className = 'log-line';
-  line.innerHTML = `<span class="ts">${ts}</span><span class="lvl-${template.lvl}">[${template.lvl.toUpperCase().padEnd(4)}]</span> ${template.msg}`;
-  logContainer.insertBefore(line, logContainer.firstChild);
-
-  // Keep max 30 lines
-  while (logContainer.children.length > 30) {
-    logContainer.removeChild(logContainer.lastChild);
-  }
-}
-
-// Add logs every 1.8s
-setInterval(addLog, 1800);
-addLog(); addLog(); addLog(); // seed a few
-
-// ─── SPARKLINE ────────────────────────────────────────
-const sparkValues = [32,45,28,62,78,55,90,71,84,66,92,75,88,95,72,80,68,91,77,85,93,70,86,89];
-const sparkEl = document.getElementById('sparkline');
-const sparkColors = ['#c9a84c','#3b82f6','#22c55e','#a855f7','#06b6d4'];
-sparkValues.forEach((v, i) => {
-  const bar = document.createElement('div');
-  bar.className = 'spark-bar';
-  bar.style.height = v + '%';
-  bar.style.background = sparkColors[i % sparkColors.length];
-  bar.style.animationDelay = (i * 0.04) + 's';
-  sparkEl.appendChild(bar);
-});
-
-// ─── METRIC COUNTERS ──────────────────────────────────
-function animateCounter(el, start, end, suffix, decimals=0, duration=1500) {
-  let startTime = null;
-  function step(timestamp) {
-    if (!startTime) startTime = timestamp;
-    const progress = Math.min((timestamp - startTime) / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    const value = start + (end - start) * eased;
-    el.textContent = decimals > 0 ? value.toFixed(decimals) + suffix : Math.floor(value) + suffix;
-    if (progress < 1) requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
-}
-
-// ─── NAV SMOOTH SCROLL ────────────────────────────────
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', e => {
-    e.preventDefault();
-    const target = document.querySelector(a.getAttribute('href'));
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
-    a.classList.add('active');
+  // Smooth scroll + active tab
+  document.querySelectorAll('a.tab').forEach(a=>{
+    a.addEventListener('click',e=>{
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href')).scrollIntoView({behavior:'smooth'});
+    });
   });
-});
-
-// ─── INTERSECTION OBSERVER for nav ────────────────────
-const sections = document.querySelectorAll('section[id], div[id]');
-const navPills = document.querySelectorAll('.nav-pill');
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      navPills.forEach(p => {
-        if (p.getAttribute('href') === '#' + entry.target.id) {
-          navPills.forEach(x => x.classList.remove('active'));
-          p.classList.add('active');
-        }
-      });
-    }
-  });
-}, { threshold: 0.3 });
-sections.forEach(s => observer.observe(s));
-
-// ─── LIVE METRIC ANIMATION ────────────────────────────
-setInterval(() => {
-  // Slightly vary metrics to look live
-  const latency = 120 + Math.floor(Math.random() * 80);
-  document.getElementById('m-latency').textContent = latency + 'ms';
-  const bar = document.getElementById('b-latency');
-  bar.style.width = (100 - (latency / 3)) + '%';
-}, 3000);
-
-// ─── STATUS FLICKER ───────────────────────────────────
-setInterval(() => {
-  const els = ['db-status', 'ai-status'];
-  els.forEach(id => {
-    const el = document.getElementById(id);
-    el.style.opacity = '0.4';
-    setTimeout(() => { el.style.opacity = '1'; }, 200);
-  });
-}, 5000);
+  const secs=[...document.querySelectorAll('section[id], div[id]')];
+  const tabs=[...document.querySelectorAll('a.tab')];
+  new IntersectionObserver(es=>{
+    es.forEach(en=>{if(en.isIntersecting){
+      tabs.forEach(t=>t.classList.toggle('active', t.getAttribute('href')==='#'+en.target.id));
+    }});
+  },{threshold:.4}).observe ? secs.forEach(s=>new IntersectionObserver(es=>{
+    es.forEach(en=>{if(en.isIntersecting){tabs.forEach(t=>t.classList.toggle('active',t.getAttribute('href')==='#'+en.target.id))}});
+  },{threshold:.4}).observe(s)) : null;
 </script>
 </body>
 </html>
