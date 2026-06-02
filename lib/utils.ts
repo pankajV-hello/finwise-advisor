@@ -5,12 +5,21 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const CURRENCY_LOCALES: Record<string, string> = {
+  AUD: "en-AU",
+  NZD: "en-NZ",
+  CAD: "en-CA",
+  USD: "en-US",
+  GBP: "en-GB",
+};
+
 export function formatCurrency(
   amount: number,
-  currency = "CAD",
-  locale = "en-CA"
+  currency = "AUD",
+  locale?: string
 ): string {
-  return new Intl.NumberFormat(locale, {
+  const resolvedLocale = locale ?? CURRENCY_LOCALES[currency] ?? "en-AU";
+  return new Intl.NumberFormat(resolvedLocale, {
     style: "currency",
     currency,
     minimumFractionDigits: 0,

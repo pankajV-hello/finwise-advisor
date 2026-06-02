@@ -43,14 +43,20 @@ export default function LandingPage() {
           Powered by Claude claude-sonnet-4-6
         </div>
 
+        <div className="flex items-center gap-2 justify-center mb-4 flex-wrap">
+          {["🇦🇺 Australia", "🇳🇿 New Zealand", "🇨🇦 Canada", "🇺🇸 USA"].map(c => (
+            <span key={c} className="text-xs px-3 py-1 rounded-full bg-secondary border border-border/60 text-muted-foreground">{c}</span>
+          ))}
+        </div>
+
         <h1 className="text-5xl md:text-6xl font-display font-bold leading-tight max-w-3xl mb-6">
           Your Personal
           <span className="block gold-gradient">AI Financial Advisor</span>
         </h1>
 
         <p className="text-lg text-muted-foreground max-w-xl mb-10">
-          Tax planning, investment advice, mortgage analysis, bookkeeping — all in one platform.
-          Upload your documents, connect your bank, and get expert AI guidance 24/7.
+          Tax (ATO · IRD · CRA · IRS), superannuation, KiwiSaver, mortgages,
+          investments, and bookkeeping — tailored to your country, in one platform.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3 mb-16">
@@ -70,7 +76,7 @@ export default function LandingPage() {
 
         {/* Trust badges */}
         <div className="flex flex-wrap gap-6 justify-center text-xs text-muted-foreground">
-          {["Bank-grade encryption", "CRA & IRS expertise", "12,000+ banks supported", "No data sold"].map(t => (
+          {["Bank-grade encryption", "ATO · IRD · CRA · IRS", "12,000+ banks supported", "AU · NZ · CA · US"].map(t => (
             <span key={t} className="flex items-center gap-1.5">
               <CheckCircle className="w-3.5 h-3.5 text-green-400" /> {t}
             </span>

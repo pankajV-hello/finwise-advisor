@@ -9,9 +9,9 @@ create table public.profiles (
   email text not null,
   full_name text,
   avatar_url text,
-  country text default 'CA', -- CA or US for tax jurisdiction
-  currency text default 'CAD',
-  financial_year_start int default 1, -- month number
+  country text default 'AU', -- AU, NZ, CA, US
+  currency text default 'AUD',
+  financial_year_start int default 7, -- month: AU/NZ = July (7), CA/US = January (1)
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -127,8 +127,18 @@ create table public.tax_profiles (
   rental_income numeric(15,2) default 0,
   other_income numeric(15,2) default 0,
   rrsp_contributions numeric(15,2) default 0,
+  -- CA specific
   rrsp_room numeric(15,2) default 0,
   tfsa_room numeric(15,2) default 0,
+  -- AU specific
+  super_concessional_contributions numeric(15,2) default 0,
+  super_non_concessional_contributions numeric(15,2) default 0,
+  hecs_help_debt numeric(15,2) default 0,
+  medicare_levy_exemption boolean default false,
+  -- NZ specific
+  kiwisaver_contributions numeric(15,2) default 0,
+  kiwisaver_rate numeric(3,2) default 0.03,
+  -- Common
   charitable_donations numeric(15,2) default 0,
   medical_expenses numeric(15,2) default 0,
   tuition numeric(15,2) default 0,
@@ -215,23 +225,31 @@ begin
   insert into public.financial_profiles (user_id)
   values (new.id);
 
-  -- Seed default categories
+  -- Seed default categories (AU/NZ/CA/US compatible)
   insert into public.categories (user_id, name, type, color, icon, is_tax_deductible) values
-    (new.id, 'Salary', 'income', '#22c55e', 'briefcase', false),
-    (new.id, 'Freelance', 'income', '#10b981', 'laptop', true),
-    (new.id, 'Investments', 'income', '#06b6d4', 'trending-up', false),
+    -- Income
+    (new.id, 'Salary / PAYG', 'income', '#22c55e', 'briefcase', false),
+    (new.id, 'ABN / Freelance', 'income', '#10b981', 'laptop', true),
+    (new.id, 'Investments & Dividends', 'income', '#06b6d4', 'trending-up', false),
     (new.id, 'Rental Income', 'income', '#8b5cf6', 'home', false),
-    (new.id, 'Housing', 'expense', '#ef4444', 'home', false),
-    (new.id, 'Food & Dining', 'expense', '#f97316', 'utensils', false),
-    (new.id, 'Transport', 'expense', '#eab308', 'car', false),
-    (new.id, 'Healthcare', 'expense', '#ec4899', 'heart', true),
-    (new.id, 'Education', 'expense', '#6366f1', 'graduation-cap', true),
+    (new.id, 'Super / KiwiSaver / RRSP', 'income', '#f59e0b', 'shield', false),
+    (new.id, 'Government Payments', 'income', '#84cc16', 'landmark', false),
+    -- Expenses
+    (new.id, 'Housing & Rent', 'expense', '#ef4444', 'home', false),
+    (new.id, 'Mortgage Repayments', 'expense', '#f97316', 'home', false),
+    (new.id, 'Food & Groceries', 'expense', '#f97316', 'utensils', false),
+    (new.id, 'Transport & Vehicle', 'expense', '#eab308', 'car', true),
+    (new.id, 'Healthcare & Medical', 'expense', '#ec4899', 'heart', true),
+    (new.id, 'Education & Training', 'expense', '#6366f1', 'graduation-cap', true),
     (new.id, 'Entertainment', 'expense', '#14b8a6', 'film', false),
-    (new.id, 'Shopping', 'expense', '#f43f5e', 'shopping-bag', false),
+    (new.id, 'Shopping & Personal', 'expense', '#f43f5e', 'shopping-bag', false),
     (new.id, 'Business Expenses', 'expense', '#a855f7', 'briefcase', true),
     (new.id, 'Charitable Donations', 'expense', '#84cc16', 'heart-handshake', true),
-    (new.id, 'Savings', 'expense', '#0ea5e9', 'piggy-bank', false),
-    (new.id, 'Utilities', 'expense', '#64748b', 'zap', false);
+    (new.id, 'Super Contributions', 'expense', '#f59e0b', 'shield', true),
+    (new.id, 'Insurance', 'expense', '#0ea5e9', 'shield', false),
+    (new.id, 'Utilities', 'expense', '#64748b', 'zap', false),
+    (new.id, 'Subscriptions', 'expense', '#8b5cf6', 'repeat', false),
+    (new.id, 'GST / Tax Paid', 'expense', '#64748b', 'receipt', false);
 
   return new;
 end;

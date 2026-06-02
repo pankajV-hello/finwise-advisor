@@ -63,8 +63,18 @@ export function SettingsForm({ userId, profile, financialProfile }: {
     {
       title: "Personal", fields: [
         { key: "full_name", label: "Full Name", type: "text" },
-        { key: "country", label: "Country", type: "select", options: [{ value: "CA", label: "Canada 🇨🇦" }, { value: "US", label: "United States 🇺🇸" }] },
-        { key: "currency", label: "Currency", type: "select", options: [{ value: "CAD", label: "CAD — Canadian Dollar" }, { value: "USD", label: "USD — US Dollar" }] },
+        { key: "country", label: "Country", type: "select", options: [
+          { value: "AU", label: "Australia 🇦🇺" },
+          { value: "NZ", label: "New Zealand 🇳🇿" },
+          { value: "CA", label: "Canada 🇨🇦" },
+          { value: "US", label: "United States 🇺🇸" },
+        ]},
+        { key: "currency", label: "Currency", type: "select", options: [
+          { value: "AUD", label: "AUD — Australian Dollar" },
+          { value: "NZD", label: "NZD — New Zealand Dollar" },
+          { value: "CAD", label: "CAD — Canadian Dollar" },
+          { value: "USD", label: "USD — US Dollar" },
+        ]},
       ]
     },
     {
@@ -78,9 +88,9 @@ export function SettingsForm({ userId, profile, financialProfile }: {
         { key: "annual_income", label: "Annual Income ($)", type: "number" },
         { key: "monthly_expenses", label: "Monthly Expenses ($)", type: "number" },
         { key: "filing_status", label: "Tax Filing Status", type: "select", options: [
-          { value: "single", label: "Single" },
-          { value: "married", label: "Married" },
-          { value: "common_law", label: "Common-Law" },
+          { value: "single", label: "Single / Individual" },
+          { value: "married", label: "Married / De Facto" },
+          { value: "common_law", label: "Common-Law / Civil Union" },
           { value: "divorced", label: "Divorced / Separated" },
         ]},
         { key: "dependents", label: "Number of Dependents", type: "number" },
