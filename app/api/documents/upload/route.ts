@@ -45,17 +45,24 @@ export async function POST(req: NextRequest) {
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const storagePath = `${user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
 
-    // ── Use admin client for storage (bypasses RLS) ──────────────────────────
-    const admin = createAdminClient();
+    // ── Storage (optional) — never let it crash the upload/extraction ─────────
+    // Uses the service-role client; if the key isn't configured or the bucket
+    // is missing, we skip storage and still extract + save the document.
     let storageOk = false;
-    const { error: storageError } = await admin.storage
-      .from("financial-docs")
-      .upload(storagePath, fileBuffer, { contentType: mimeType, upsert: false });
-
-    if (storageError) {
-      console.warn("Storage skipped (bucket may not exist yet):", storageError.message);
-    } else {
-      storageOk = true;
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const admin = createAdminClient();
+        const { error: storageError } = await admin.storage
+          .from("financial-docs")
+          .upload(storagePath, fileBuffer, { contentType: mimeType, upsert: false });
+        if (storageError) {
+          console.warn("Storage skipped:", storageError.message);
+        } else {
+          storageOk = true;
+        }
+      } catch (e) {
+        console.warn("Storage unavailable:", e instanceof Error ? e.message : e);
+      }
     }
 
     // ── Try saving to documents table — skip gracefully if schema not run ───

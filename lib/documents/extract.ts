@@ -296,13 +296,17 @@ export async function extractDocumentData(
       }
     }
 
-    // Final fallback — ask the model to guess from filename only
-    return extractWithText(
-      `Scanned PDF document named: ${fileName}. ` +
-      `Based on the filename, extract what financial data you can infer and set documentType appropriately. ` +
-      `Set summary to explain this is a scanned document that could not be rendered.`,
-      fileName
-    );
+    // Final fallback (edge runtime, no Anthropic): can't parse the PDF here.
+    // Return a clear, helpful result rather than a confusing guess.
+    return {
+      documentType: "other",
+      summary:
+        "This PDF couldn't be read automatically on the current server. " +
+        "For best results, upload a photo/screenshot (JPG/PNG) of the document, " +
+        "or export your transactions as CSV — both are extracted instantly. " +
+        "(To enable direct PDF reading, an ANTHROPIC_API_KEY can be configured.)",
+      data: { fileName, note: "pdf_unreadable_on_edge" },
+    };
   }
 
   if (isImage) {
