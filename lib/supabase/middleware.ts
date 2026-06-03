@@ -5,6 +5,19 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config";
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
+  try {
+    return await runSession(request, supabaseResponse);
+  } catch (err) {
+    // Never let an auth/session error take down the whole site — fail open so
+    // public pages still render. Protected routes are still guarded server-side.
+    console.error("Middleware session error:", err instanceof Error ? err.message : err);
+    return supabaseResponse;
+  }
+}
+
+async function runSession(request: NextRequest, initialResponse: NextResponse) {
+  let supabaseResponse = initialResponse;
+
   const supabase = createServerClient(
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
