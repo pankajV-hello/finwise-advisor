@@ -1,6 +1,25 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+
+/**
+ * Extract PDF text in the BROWSER (pdf.js fully supported here), so it works
+ * regardless of the server runtime — Cloudflare Workers can't reliably run
+ * pdf.js. We send the extracted text to the API for AI parsing.
+ */
+async function extractPdfTextInBrowser(file: File): Promise<string> {
+  try {
+    const { extractText, getDocumentProxy } = await import("unpdf");
+    const buf = new Uint8Array(await file.arrayBuffer());
+    const pdf = await getDocumentProxy(buf);
+    const { text } = await extractText(pdf, { mergePages: true });
+    const merged = Array.isArray(text) ? text.join("\n") : text;
+    return (merged || "").slice(0, 12000);
+  } catch (e) {
+    console.warn("Client PDF extraction failed:", e);
+    return "";
+  }
+}
 import {
   Upload,
   FileText,
@@ -225,6 +244,17 @@ export function DocumentUploader({ onUploaded }: DocumentUploaderProps) {
         try {
           const formData = new FormData();
           formData.append("file", upload.file);
+
+          // For PDFs, extract text in the browser (reliable) and send it along
+          const isPdf =
+            upload.file.type === "application/pdf" ||
+            upload.file.name.toLowerCase().endsWith(".pdf");
+          if (isPdf) {
+            const pdfText = await extractPdfTextInBrowser(upload.file);
+            if (pdfText.trim().length > 0) {
+              formData.append("pdfText", pdfText);
+            }
+          }
 
           const res = await fetch("/api/documents/upload", {
             method: "POST",

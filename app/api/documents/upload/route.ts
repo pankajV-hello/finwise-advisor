@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
+    // Browser may pre-extract PDF text (reliable on edge runtimes)
+    const clientPdfText = (formData.get("pdfText") as string | null) || "";
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -89,7 +91,7 @@ export async function POST(req: NextRequest) {
     let extractError: string | null = null;
 
     try {
-      extracted = await extractDocumentData(fileBuffer, mimeType, file.name);
+      extracted = await extractDocumentData(fileBuffer, mimeType, file.name, clientPdfText);
     } catch (err) {
       console.error("Extraction error:", err);
       extractError = err instanceof Error ? err.message : "Extraction failed";

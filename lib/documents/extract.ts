@@ -268,7 +268,8 @@ async function extractPdfWithAnthropic(buffer: Buffer, fileName: string): Promis
 export async function extractDocumentData(
   fileBuffer: Buffer,
   mimeType: string,
-  fileName: string
+  fileName: string,
+  clientPdfText?: string
 ): Promise<ExtractedDocument> {
   const isCSV = mimeType === "text/csv" || fileName.toLowerCase().endsWith(".csv");
   const isPDF = mimeType === "application/pdf" || fileName.toLowerCase().endsWith(".pdf");
@@ -279,7 +280,12 @@ export async function extractDocumentData(
   }
 
   if (isPDF) {
-    // Try text layer first (fast, accurate for digital PDFs)
+    // 1. Prefer text the browser already extracted (reliable on edge runtimes)
+    if (clientPdfText && clientPdfText.trim().length > 40) {
+      return extractWithText(clientPdfText, fileName);
+    }
+
+    // 2. Server-side text extraction (works on Node; may no-op on workerd)
     const pdfText = await extractPdfText(fileBuffer);
     if (pdfText.trim().length > 80) {
       return extractWithText(pdfText, fileName);
