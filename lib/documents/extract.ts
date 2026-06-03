@@ -61,6 +61,8 @@ export interface ExtractedDocument {
     rrspDeduction?: number; cppContribution?: number; eiPremium?: number;
     superContribution?: number; medicareLevy?: number;
     period?: string; employer?: string;
+    payFrequency?: string;  // monthly | fortnightly | weekly | quarterly | annually
+    annualSalary?: number;  // if stated on the document
   };
   taxDetails?: {
     taxYear?: number; totalIncome?: number; taxableIncome?: number;
@@ -85,7 +87,7 @@ Return ONLY a valid JSON object (no markdown, no explanation):
   "summary": "2-3 sentence plain English summary",
   "data": {},
   "transactions": [{"date":"YYYY-MM-DD","description":"string","amount":number,"type":"credit|debit","category":"string"}],
-  "incomeDetails": {"grossPay":number,"netPay":number,"taxDeducted":number,"superContribution":number,"medicareLevy":number,"eiPremium":number,"cppContribution":number,"period":"string","employer":"string"},
+  "incomeDetails": {"grossPay":number (this pay period),"netPay":number,"taxDeducted":number,"superContribution":number,"medicareLevy":number,"eiPremium":number,"cppContribution":number,"period":"string","employer":"string","payFrequency":"monthly|fortnightly|weekly|quarterly|annually","annualSalary":number (if the document states an annual salary)},
   "taxDetails": {"taxYear":number,"totalIncome":number,"taxableIncome":number,"taxOwing":number,"refundOwing":number,"rrspContributions":number},
   "investmentDetails": {"accountType":"string","totalValue":number,"holdings":[],"deposits":number,"withdrawals":number,"gains":number}
 }

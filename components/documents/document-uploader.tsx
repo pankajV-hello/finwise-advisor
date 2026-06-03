@@ -29,6 +29,7 @@ interface UploadedFile {
     document: Record<string, unknown>;
     extracted?: ExtractedDocument;
     transactionsImported: number;
+    fieldsUpdated?: string[];
   };
   error?: string;
 }
@@ -78,9 +79,11 @@ function getFileIcon(file: File) {
 function ExtractionResult({
   extracted,
   transactionsImported,
+  fieldsUpdated,
 }: {
   extracted: ExtractedDocument;
   transactionsImported: number;
+  fieldsUpdated?: string[];
 }) {
   const config = DOC_TYPE_CONFIG[extracted.documentType] || DOC_TYPE_CONFIG.other;
   const Icon = config.icon;
@@ -166,6 +169,27 @@ function ExtractionResult({
         <div className="flex items-center gap-1.5 text-xs text-green-600">
           <CheckCircle className="w-3.5 h-3.5" />
           {transactionsImported} transactions imported to Bookkeeper
+        </div>
+      )}
+
+      {/* Fields auto-filled */}
+      {fieldsUpdated && fieldsUpdated.length > 0 && (
+        <div className="flex items-start gap-1.5 text-xs text-primary border-t border-border/40 pt-2 mt-1">
+          <CheckCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span>
+            Auto-filled your profile —{" "}
+            {fieldsUpdated
+              .map((f) =>
+                f.includes("annual_income") ? "income" :
+                f.includes("tax_profile.tax_paid") ? "tax paid" :
+                f.includes("tax_profile") ? "tax profile" :
+                f.includes("accounts") ? "investment account" :
+                f.includes("transactions") ? f : f
+              )
+              .filter((v, i, a) => a.indexOf(v) === i)
+              .join(" · ")}
+            . Check your Dashboard & Tax Advisor.
+          </span>
         </div>
       )}
     </div>
@@ -390,6 +414,7 @@ export function DocumentUploader({ onUploaded }: DocumentUploaderProps) {
                         transactionsImported={
                           upload.result.transactionsImported
                         }
+                        fieldsUpdated={upload.result.fieldsUpdated}
                       />
                     )}
                   </div>

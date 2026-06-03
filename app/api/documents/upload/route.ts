@@ -107,29 +107,105 @@ export async function POST(req: NextRequest) {
       }).eq("id", docId);
     }
 
-    // ── Auto-fill financial profile from payslip ──────────────────────────────
-    if (extracted?.incomeDetails && extracted.documentType === "salary_slip") {
+    // ── Map extracted data into the right fields ──────────────────────────────
+    const docType = (extracted?.documentType || "").toLowerCase();
+    const isPayslip = docType.includes("salary") || docType.includes("payslip") || docType.includes("pay_slip");
+    const isTaxForm = ["t4", "t1", "w2", "1040"].some((t) => docType.includes(t));
+    const isBank = docType.includes("bank");
+    const isInvestment = docType.includes("investment");
+    const taxYear = new Date().getFullYear();
+    const fieldsUpdated: string[] = [];
+
+    // Annualisation helper
+    const freqMultiplier = (f?: string): number => {
+      const s = (f || "").toLowerCase();
+      if (s.includes("week") && s.includes("fort")) return 26;
+      if (s.includes("fortnight") || s.includes("bi-week") || s.includes("biweek")) return 26;
+      if (s.includes("week")) return 52;
+      if (s.includes("month")) return 12;
+      if (s.includes("quarter")) return 4;
+      if (s.includes("annual") || s.includes("year")) return 1;
+      return 12; // sensible default
+    };
+
+    // ── Payslip → financial_profiles + tax_profiles ──────────────────────────
+    if (isPayslip && extracted?.incomeDetails) {
       const inc = extracted.incomeDetails;
-      if (inc.grossPay) {
+      const mult = freqMultiplier(inc.payFrequency);
+      const annualIncome = inc.annualSalary && inc.annualSalary > 0
+        ? inc.annualSalary
+        : inc.grossPay ? Math.round(inc.grossPay * mult) : 0;
+      const annualTax = inc.taxDeducted ? Math.round(inc.taxDeducted * mult) : 0;
+      const annualSuper = inc.superContribution ? Math.round(inc.superContribution * mult) : 0;
+
+      if (annualIncome > 0) {
         await supabase.from("financial_profiles").upsert(
-          { user_id: user.id, annual_income: inc.grossPay * 12 },
+          { user_id: user.id, annual_income: annualIncome, employment_type: "employed" },
           { onConflict: "user_id" }
         );
+        fieldsUpdated.push("financial_profile.annual_income");
+
+        // Tax profile (current year) — feeds the Tax Advisor
+        await supabase.from("tax_profiles").upsert(
+          {
+            user_id: user.id,
+            tax_year: taxYear,
+            employment_income: annualIncome,
+            tax_paid: annualTax,
+            super_concessional_contributions: annualSuper,
+          },
+          { onConflict: "user_id,tax_year" }
+        );
+        fieldsUpdated.push("tax_profile.employment_income", "tax_profile.tax_paid");
       }
     }
 
-    // ── Auto-import transactions from bank statements ──────────────────────────
-    if (extracted?.transactions?.length && extracted.documentType === "bank_statement") {
-      const rows = extracted.transactions.slice(0, 500).map((t) => ({
+    // ── Tax form (T4/W2/etc) → tax_profiles ──────────────────────────────────
+    if (isTaxForm && extracted?.taxDetails) {
+      const t = extracted.taxDetails;
+      await supabase.from("tax_profiles").upsert(
+        {
+          user_id: user.id,
+          tax_year: t.taxYear || taxYear,
+          employment_income: t.employmentIncome || t.totalIncome || 0,
+          tax_paid: t.taxOwing && t.taxOwing > 0 ? t.taxOwing : 0,
+          expected_refund: t.refundOwing && t.refundOwing > 0 ? t.refundOwing : null,
+          rrsp_contributions: t.rrspContributions || 0,
+        },
+        { onConflict: "user_id,tax_year" }
+      );
+      fieldsUpdated.push("tax_profile");
+    }
+
+    // ── Investment statement → accounts ──────────────────────────────────────
+    if (isInvestment && extracted?.investmentDetails?.totalValue) {
+      await supabase.from("accounts").insert({
         user_id: user.id,
-        date: t.date,
-        description: t.description,
-        amount: t.type === "credit" ? Math.abs(t.amount) : -Math.abs(t.amount),
-        category: t.category || (t.type === "credit" ? "Salary / PAYG" : "Uncategorized"),
-        type: t.type === "credit" ? "income" : "expense",
+        name: `${extracted.institution || "Investment"} (${extracted.investmentDetails.accountType || "Investment"})`,
+        type: "investment",
+        institution: extracted.institution || null,
+        balance: extracted.investmentDetails.totalValue,
+        is_asset: true,
+        notes: `Imported from ${file.name}`,
+      });
+      fieldsUpdated.push("accounts");
+    }
+
+    // ── Bank statement → transactions ────────────────────────────────────────
+    let txImported = 0;
+    if (extracted?.transactions?.length && (isBank || extracted.transactions.length > 2)) {
+      const rows = extracted.transactions.slice(0, 500).map((tx) => ({
+        user_id: user.id,
+        date: tx.date,
+        description: tx.description,
+        amount: tx.type === "credit" ? Math.abs(tx.amount) : -Math.abs(tx.amount),
+        category: tx.category || (tx.type === "credit" ? "Salary / PAYG" : "Uncategorized"),
+        type: tx.type === "credit" ? "income" : "expense",
         notes: `Imported from ${file.name}`,
       }));
-      await supabase.from("transactions").insert(rows);
+      const { data: inserted } = await supabase.from("transactions").insert(rows).select("id");
+      txImported = inserted?.length || rows.length;
+      fieldsUpdated.push(`${txImported} transactions`);
     }
 
     return NextResponse.json({
@@ -137,8 +213,8 @@ export async function POST(req: NextRequest) {
       storageOk,
       dbOk: !!docId,
       extracted,
-      transactionsImported: extracted?.transactions?.length || 0,
-      autoFilledProfile: !!(extracted?.incomeDetails?.grossPay),
+      transactionsImported: txImported,
+      fieldsUpdated,
       error: extractError,
     });
 
