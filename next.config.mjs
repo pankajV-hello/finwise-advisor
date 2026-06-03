@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Renamed out of `experimental` in Next 15
-  serverExternalPackages: ["pdf-parse"],
+  // unpdf is edge-compatible and should be bundled, not externalized.
 };
 
 export default nextConfig;

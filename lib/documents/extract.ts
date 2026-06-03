@@ -94,16 +94,14 @@ Rules: exact figures only, omit inapplicable keys, return ONLY the JSON object.`
 
 // ─── PDF text extraction (pdf-parse v2 — PDFParse class) ─────────────────────
 async function extractPdfText(buffer: Buffer): Promise<string> {
-  // Node-only runtime; skip on edge (Cloudflare Workers)
-  if (typeof process === "undefined" || !process.versions?.node) return "";
+  // unpdf works in Node AND edge runtimes (Cloudflare Workers) — bundles a
+  // serverless build of pdf.js with no native dependencies.
   try {
-    // Non-literal specifier keeps esbuild (OpenNext) from bundling this Node lib
-    const pkg = "pdf-parse";
-    const { PDFParse } = (await import(/* webpackIgnore: true */ pkg)) as typeof import("pdf-parse");
-    const parser = new PDFParse({ data: new Uint8Array(buffer) });
-    const result = await parser.getText();
-    await parser.destroy();
-    return result.text?.slice(0, 10000) || "";
+    const { extractText, getDocumentProxy } = await import("unpdf");
+    const pdf = await getDocumentProxy(new Uint8Array(buffer));
+    const { text } = await extractText(pdf, { mergePages: true });
+    const merged = Array.isArray(text) ? text.join("\n") : text;
+    return (merged || "").slice(0, 12000);
   } catch (err) {
     console.warn("PDF text extraction failed:", err instanceof Error ? err.message : err);
     return "";
@@ -296,16 +294,14 @@ export async function extractDocumentData(
       }
     }
 
-    // Final fallback (edge runtime, no Anthropic): can't parse the PDF here.
-    // Return a clear, helpful result rather than a confusing guess.
+    // Reached only for image-only (scanned) PDFs with no text layer on edge.
     return {
       documentType: "other",
       summary:
-        "This PDF couldn't be read automatically on the current server. " +
-        "For best results, upload a photo/screenshot (JPG/PNG) of the document, " +
-        "or export your transactions as CSV — both are extracted instantly. " +
-        "(To enable direct PDF reading, an ANTHROPIC_API_KEY can be configured.)",
-      data: { fileName, note: "pdf_unreadable_on_edge" },
+        "This looks like a scanned/image-only PDF, so there's no text to read. " +
+        "Please upload a clear photo or screenshot (JPG/PNG) of the document instead — " +
+        "that's read instantly. Digital PDFs (with selectable text) work directly.",
+      data: { fileName, note: "scanned_pdf_no_text_layer" },
     };
   }
 
