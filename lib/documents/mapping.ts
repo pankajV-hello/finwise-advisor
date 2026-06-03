@@ -3,7 +3,7 @@
  * financial fields. Kept separate from the API route so they can be unit-tested.
  */
 
-export type DocClass = "payslip" | "tax_form" | "bank" | "investment" | "other";
+export type DocClass = "payslip" | "tax_form" | "bank" | "investment" | "mortgage" | "other";
 
 /** Annual multiplier for a pay frequency string. */
 export function freqMultiplier(frequency?: string): number {
@@ -27,6 +27,7 @@ export function classifyDocument(documentType?: string): DocClass {
     return "payslip";
   }
   if (["t4", "t1", "w2", "w-2", "1040"].some((t) => d.includes(t))) return "tax_form";
+  if (d.includes("mortgage") || d.includes("home loan") || d.includes("loan statement")) return "mortgage";
   if (d.includes("bank")) return "bank";
   if (d.includes("investment")) return "investment";
   return "other";

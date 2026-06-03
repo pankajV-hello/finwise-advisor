@@ -4,7 +4,9 @@ import { BookOpen } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { AIChat } from "@/components/chat/ai-chat";
 import { TransactionManager } from "@/components/bookkeeper/transaction-manager";
+import { SpendingInsightsPanel } from "@/components/bookkeeper/spending-insights";
 import { AdviceWarning } from "@/components/legal/advice-warning";
+import { analyzeSpending } from "@/lib/insights/spending";
 import { formatCurrency } from "@/lib/utils";
 
 const BOOKKEEPER_SUGGESTIONS = [
@@ -24,12 +26,21 @@ export default async function BookkeeperPage() {
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0];
 
-  const [{ data: transactions }, { data: categories }, { data: profile }] = await Promise.all([
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString().split("T")[0];
+
+  const [{ data: transactions }, { data: allTx }, { data: categories }, { data: profile }, { data: finProfile }] = await Promise.all([
     supabase.from("transactions").select("*").eq("user_id", user.id)
       .gte("date", firstOfMonth).order("date", { ascending: false }),
+    supabase.from("transactions").select("*").eq("user_id", user.id)
+      .gte("date", sixMonthsAgo).order("date", { ascending: false }).limit(2000),
     supabase.from("categories").select("*").eq("user_id", user.id).order("type").order("name"),
-    supabase.from("profiles").select("country").eq("id", user.id).single(),
+    supabase.from("profiles").select("country, currency").eq("id", user.id).single(),
+    supabase.from("financial_profiles").select("annual_income").eq("user_id", user.id).single(),
   ]);
+
+  // Spending insights over the last ~6 months
+  const monthlyIncomeOverride = finProfile?.annual_income ? finProfile.annual_income / 12 : undefined;
+  const insights = analyzeSpending(allTx || [], monthlyIncomeOverride);
 
   // Calculate monthly totals
   const income = transactions?.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0) || 0;
@@ -51,6 +62,11 @@ export default async function BookkeeperPage() {
     savingsRate: income > 0 ? ((net / income) * 100).toFixed(1) + "%" : "N/A",
     topExpenseCategories: topCats.map(([cat, amt]) => `${cat}: ${formatCurrency(amt)}`),
     transactionCount: transactions?.length || 0,
+    // 6-month spending insight context for the AI
+    insightSavingsRate: `${Math.round(insights.savingsRate * 100)}%`,
+    insightTopCategories: insights.topCategories.map(c => `${c.category}: ${formatCurrency(c.total)}/mo (${Math.round(c.pctOfIncome * 100)}% of income)`),
+    insightFlags: insights.flags.map(f => f.title),
+    potentialMonthlySaving: insights.flags.reduce((s, f) => s + (f.monthlySaving || 0), 0),
   };
 
   return (
@@ -82,6 +98,11 @@ export default async function BookkeeperPage() {
             {income > 0 ? `${((net / income) * 100).toFixed(0)}% savings rate` : "Add income"}
           </p>
         </div>
+      </div>
+
+      {/* Spending insights — where your money goes + how to save */}
+      <div className="mb-6">
+        <SpendingInsightsPanel insights={insights} currency={profile?.currency || "AUD"} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-320px)]">

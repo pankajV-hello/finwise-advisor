@@ -50,6 +50,12 @@ describe("classifyDocument", () => {
     expect(classifyDocument("investment_statement")).toBe("investment");
   });
 
+  it("recognises mortgage statements", () => {
+    expect(classifyDocument("mortgage_statement")).toBe("mortgage");
+    expect(classifyDocument("Home Loan Statement")).toBe("mortgage");
+    expect(classifyDocument("loan statement")).toBe("mortgage");
+  });
+
   it("falls back to other", () => {
     expect(classifyDocument("receipt")).toBe("other");
     expect(classifyDocument(undefined)).toBe("other");

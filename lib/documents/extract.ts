@@ -78,6 +78,16 @@ export interface ExtractedDocument {
     holdings?: Array<{ name: string; value: number; units?: number }>;
     deposits?: number; withdrawals?: number; gains?: number;
   };
+  mortgageDetails?: {
+    lender?: string;
+    balance?: number;            // outstanding loan balance
+    interestRate?: number;       // e.g. 5.25 (percent) or 0.0525
+    repaymentAmount?: number;    // per-period repayment
+    repaymentFrequency?: string; // monthly | fortnightly | weekly
+    interestPaid?: number;       // interest charged this period/YTD
+    propertyValue?: number;
+    amortizationYears?: number;
+  };
 }
 
 const EXTRACTION_PROMPT = `You are a financial document parser. Extract ALL financial data accurately.
@@ -93,8 +103,11 @@ Return ONLY a valid JSON object (no markdown, no explanation):
   "transactions": [{"date":"YYYY-MM-DD","description":"string","amount":number,"type":"credit|debit","category":"string"}],
   "incomeDetails": {"grossPay":number (this pay period),"netPay":number,"taxDeducted":number,"superContribution":number,"medicareLevy":number,"eiPremium":number,"cppContribution":number,"period":"string","periodEnd":"YYYY-MM-DD (end of this pay period)","employer":"string","payFrequency":"monthly|fortnightly|weekly|quarterly|annually","annualSalary":number (if stated),"ytdGross":number (year-to-date gross if a YTD column is shown),"ytdTax":number (YTD tax withheld),"ytdSuper":number (YTD super/retirement)},
   "taxDetails": {"taxYear":number,"totalIncome":number,"taxableIncome":number,"taxOwing":number,"refundOwing":number,"rrspContributions":number},
-  "investmentDetails": {"accountType":"string","totalValue":number,"holdings":[],"deposits":number,"withdrawals":number,"gains":number}
+  "investmentDetails": {"accountType":"string","totalValue":number,"holdings":[],"deposits":number,"withdrawals":number,"gains":number},
+  "mortgageDetails": {"lender":"string","balance":number (outstanding loan balance),"interestRate":number (annual % e.g. 5.25),"repaymentAmount":number (per period),"repaymentFrequency":"monthly|fortnightly|weekly","interestPaid":number,"propertyValue":number,"amortizationYears":number}
 }
+
+For bank/credit-card statements, ALWAYS populate the transactions array with every line item and assign each a sensible category (e.g. Housing & Rent, Food & Groceries, Transport & Vehicle, Entertainment, Shopping & Personal, Subscriptions, Utilities, Healthcare & Medical, Dining Out).
 
 Rules: exact figures only, omit inapplicable keys, return ONLY the JSON object.`;
 

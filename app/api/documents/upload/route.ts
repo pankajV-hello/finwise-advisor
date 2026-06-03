@@ -169,6 +169,39 @@ export async function POST(req: NextRequest) {
       fieldsUpdated.push("tax_profile");
     }
 
+    // ── Mortgage statement → mortgages + liability account ───────────────────
+    if (docClass === "mortgage" && extracted?.mortgageDetails) {
+      const m = extracted.mortgageDetails;
+      if (m.balance && m.balance > 0) {
+        // Normalise rate: accept either 5.25 (percent) or 0.0525 (decimal)
+        const rate = m.interestRate
+          ? m.interestRate > 1 ? m.interestRate / 100 : m.interestRate
+          : null;
+        await supabase.from("mortgages").insert({
+          user_id: user.id,
+          property_name: extracted.institution ? `${extracted.institution} Mortgage` : "Mortgage",
+          loan_amount: m.balance,
+          interest_rate: rate || 0,
+          amortization_years: m.amortizationYears || 25,
+          payment_frequency: m.repaymentFrequency || "monthly",
+          lender: m.lender || extracted.institution || null,
+          purchase_price: m.propertyValue || null,
+        });
+        // Also reflect as a liability account for net-worth
+        await supabase.from("accounts").insert({
+          user_id: user.id,
+          name: `${m.lender || extracted.institution || "Home"} Mortgage`,
+          type: "mortgage",
+          institution: m.lender || extracted.institution || null,
+          balance: m.balance,
+          is_asset: false,
+          interest_rate: rate,
+          notes: `Imported from ${file.name}`,
+        });
+        fieldsUpdated.push("mortgage", "liability account");
+      }
+    }
+
     // ── Investment statement → accounts ──────────────────────────────────────
     if (isInvestment && extracted?.investmentDetails?.totalValue) {
       await supabase.from("accounts").insert({

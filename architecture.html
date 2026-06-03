@@ -155,7 +155,7 @@
       <div class="card metric"><div class="v" style="color:var(--primary)">5</div><div class="l">AI Advisor Agents</div></div>
       <div class="card metric"><div class="v" style="color:var(--sky)">14</div><div class="l">Database Tables</div></div>
       <div class="card metric"><div class="v" style="color:var(--gold)">4</div><div class="l">Tax Jurisdictions</div></div>
-      <div class="card metric"><div class="v" style="color:var(--lime)">78</div><div class="l">Passing Tests</div></div>
+      <div class="card metric"><div class="v" style="color:var(--lime)">90</div><div class="l">Passing Tests</div></div>
     </div>
     <p style="margin-top:18px;font-size:13px;color:var(--muted)">
       Live at <b style="color:var(--primary)">finwise-advisor.verma-pankaj.workers.dev</b> ·
@@ -287,7 +287,7 @@
       <div class="node">Map to fields</div>
     </div>
     <div class="grid g3" style="margin-top:14px">
-      <div><span class="badge b-s">PDF</span><p style="font-size:12px;color:var(--muted);margin-top:6px"><b>unpdf</b> (serverless pdf.js) extracts text on Workers → Groq parses. Scanned PDFs prompt for an image.</p></div>
+      <div><span class="badge b-s">PDF</span><p style="font-size:12px;color:var(--muted);margin-top:6px"><b>unpdf</b> extracts text <b>in the browser</b> (reliable on edge), sends text to Groq to parse. Scanned PDFs prompt for an image.</p></div>
       <div><span class="badge b-l">Image</span><p style="font-size:12px;color:var(--muted);margin-top:6px">Groq vision (llama-4-scout) reads screenshots of payslips/receipts directly.</p></div>
       <div><span class="badge b-g">CSV</span><p style="font-size:12px;color:var(--muted);margin-top:6px">Bank exports parsed and auto-categorised into transactions.</p></div>
     </div>
@@ -301,11 +301,29 @@
       <tr><th>Document</th><th>Extracted</th><th>→ Table</th><th>→ Visible on</th></tr>
       <tr><td><span class="q">Payslip</span></td><td>Annual salary / gross, tax, super, YTD</td><td>financial_profiles · tax_profiles</td><td>Dashboard · Financial · Tax</td></tr>
       <tr><td><span class="q">T4 / W-2 / 1040</span></td><td>Income, tax owing, refund, contributions</td><td>tax_profiles</td><td>Tax Advisor</td></tr>
-      <tr><td><span class="q">Bank statement</span></td><td>Transactions (date, amount, category)</td><td>transactions</td><td>Bookkeeper</td></tr>
-      <tr><td><span class="q">Investment</span></td><td>Holdings, total value</td><td>accounts</td><td>Dashboard net worth · Financial</td></tr>
+      <tr><td><span class="q">Bank statement</span></td><td>Transactions (date, amount, category)</td><td>transactions</td><td>Bookkeeper · Spending Insights</td></tr>
+      <tr><td><span class="q">Mortgage statement</span></td><td>Balance, rate, repayment, lender</td><td>mortgages · accounts (liability)</td><td>Mortgage · Dashboard net worth</td></tr>
+      <tr><td><span class="q">Investment</span></td><td>Holdings, total value</td><td>accounts (asset)</td><td>Dashboard net worth · Financial</td></tr>
     </table>
     </div>
     <div class="note" style="margin-top:16px"><b>YTD accuracy:</b> Annualisation prefers a stated annual salary, then projects year-to-date figures over the financial year (AU Jul · NZ Apr · CA/US Jan), then falls back to period × frequency — so variable/hourly pay is handled correctly, not just 12× of one period.</div>
+  </div>
+
+  <!-- Spending insights -->
+  <div class="card" style="margin-top:18px">
+    <div class="card-title">📊 Spending Insights — "where am I overspending?"</div>
+    <div class="flow" style="margin-bottom:12px">
+      <div class="node">Transactions<br/>(6 months)</div><span class="arr">→</span>
+      <div class="node">Categorise<br/>essential vs wants</div><span class="arr">→</span>
+      <div class="node">Benchmark<br/>vs income</div><span class="arr">→</span>
+      <div class="node" style="background:var(--gold-soft);border-color:#f0dcae">Flags +<br/>$ savings</div>
+    </div>
+    <div class="grid g3">
+      <div><span class="badge b-p">Category breakdown</span><p style="font-size:12px;color:var(--muted);margin-top:6px">Monthly spend per category, % of income, essential vs discretionary split.</p></div>
+      <div><span class="badge b-g">Overspend flags</span><p style="font-size:12px;color:var(--muted);margin-top:6px">Housing &gt;30%, dining &gt;10%, discretionary &gt;30%, negative cashflow — each with an estimated monthly saving.</p></div>
+      <div><span class="badge b-s">Recurring detection</span><p style="font-size:12px;color:var(--muted);margin-top:6px">Finds repeated charges (subscriptions, memberships) so unused ones can be cancelled.</p></div>
+    </div>
+    <div class="ok" style="margin-top:14px">✓ Pure, deterministic engine (no AI cost). Surfaces a <b>total potential monthly saving</b> and feeds the AI Bookkeeper context so chat answers reference your real spend.</div>
   </div>
 </div>
 </section>
@@ -472,7 +490,7 @@
     </div>
     <div class="card">
       <div class="card-title">AI & Integrations</div>
-      <ul class="ck"><li>Groq (default · free tier)</li><li>Ollama (local · free)</li><li>Anthropic via fetch (opt-in, no SDK)</li><li>Tax engine (pure TS, no AI)</li><li>Basiq · Akahu · Plaid</li><li>vitest (78 tests)</li></ul>
+      <ul class="ck"><li>Groq (default · free tier)</li><li>Ollama (local · free)</li><li>Anthropic via fetch (opt-in, no SDK)</li><li>Tax engine (pure TS, no AI)</li><li>Basiq · Akahu · Plaid</li><li>vitest (90 tests)</li></ul>
     </div>
   </div>
 
@@ -662,7 +680,7 @@
     <div class="flow">
       <div class="node">git push<br/>main</div><span class="arr">→</span>
       <div class="node">GitHub<br/>(pankajV-hello)</div><span class="arr">→</span>
-      <div class="node">npm test<br/>78 tests</div><span class="arr">→</span>
+      <div class="node">npm test<br/>90 tests</div><span class="arr">→</span>
       <div class="node">next build<br/>+ OpenNext</div><span class="arr">→</span>
       <div class="node">wrangler<br/>deploy</div><span class="arr">→</span>
       <div class="node" style="background:var(--lime-soft);border-color:#cce8bd">Live on<br/>Workers</div>
@@ -677,11 +695,11 @@
   <div class="sec-head">
     <span class="sec-tag nf">Quality & Testing</span>
     <h2>Regression Suite</h2>
-    <p>A financial app's math must be exact. 78 vitest unit tests guard the critical pure logic and lock in fixes against regression.</p>
+    <p>A financial app's math must be exact. 90 vitest unit tests guard the critical pure logic and lock in fixes against regression.</p>
   </div>
   <div class="grid g4" style="margin-bottom:18px">
-    <div class="card metric"><div class="v" style="color:var(--lime)">78</div><div class="l">Passing tests</div></div>
-    <div class="card metric"><div class="v" style="color:var(--primary)">5</div><div class="l">Test suites</div></div>
+    <div class="card metric"><div class="v" style="color:var(--lime)">90</div><div class="l">Passing tests</div></div>
+    <div class="card metric"><div class="v" style="color:var(--primary)">6</div><div class="l">Test suites</div></div>
     <div class="card metric"><div class="v" style="color:var(--gold)">18</div><div class="l">Tax-math tests</div></div>
     <div class="card metric"><div class="v" style="color:var(--sky)">2</div><div class="l">Bugs caught & fixed</div></div>
   </div>
@@ -691,7 +709,8 @@
       <ul class="ck">
         <li><b>utils</b> — currency, mortgage payments, amortization, net worth, health score, savings rate</li>
         <li><b>tax</b> — ATO/IRD/CRA/IRS brackets, levies, deductions, refund, suggestions</li>
-        <li><b>mapping</b> — pay-frequency, doc classification, YTD projection, FY months</li>
+        <li><b>mapping</b> — pay-frequency, doc classification (incl. mortgage), YTD projection, FY months</li>
+        <li><b>spending</b> — category analysis, overspend flags, recurring detection, savings rate</li>
         <li><b>agents</b> — AI provider selection</li>
         <li><b>consistency</b> — tax-year guard (prevents the bug recurring)</li>
       </ul>
@@ -714,7 +733,7 @@
 <footer>
   <div style="font-size:18px;margin-bottom:6px">✦</div>
   <b style="color:var(--primary)">FinWise AI</b> · Architecture Blueprint · finwise-advisor.com<br/>
-  Next.js 15 · React 19 · Supabase · Groq (free) · unpdf · Cloudflare Workers · 78 tests · AU·NZ·CA·US
+  Next.js 15 · React 19 · Supabase · Groq (free) · unpdf · Cloudflare Workers · 90 tests · AU·NZ·CA·US
 </footer>
 
 <script>
