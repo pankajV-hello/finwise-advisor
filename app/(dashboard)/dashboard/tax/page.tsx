@@ -4,6 +4,8 @@ import { Receipt, Plus, FileText } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { AIChat } from "@/components/chat/ai-chat";
 import { TaxProfileForm } from "@/components/tax/tax-profile-form";
+import { TaxCalculation } from "@/components/tax/tax-calculation";
+import { calculateTax } from "@/lib/tax/calculator";
 import { AdviceWarning } from "@/components/legal/advice-warning";
 import { formatCurrency, getActiveTaxYear } from "@/lib/utils";
 
@@ -29,18 +31,35 @@ export default async function TaxPage() {
     supabase.from("profiles").select("country").eq("id", user.id).single(),
   ]);
 
+  // Server-side estimate so the AI references the same numbers shown in the UI
+  const _country = (["AU", "NZ", "CA", "US"].includes(profile?.country || "")
+    ? profile!.country : "AU") as "AU" | "NZ" | "CA" | "US";
+  const _income =
+    (taxProfile?.employment_income || 0) + (taxProfile?.self_employment_income || 0) +
+    (taxProfile?.investment_income || 0) + (taxProfile?.rental_income || 0) ||
+    financialProfile?.annual_income || 0;
+  const estimate = calculateTax({
+    jurisdiction: _country,
+    grossIncome: _income,
+    taxWithheld: taxProfile?.tax_paid || 0,
+  });
+
   const userContext = {
-    country: profile?.country || "CA",
+    country: profile?.country || "AU",
     taxYear: TAX_YEAR,
+    grossIncome: _income,
     employmentIncome: taxProfile?.employment_income || financialProfile?.annual_income || 0,
     selfEmploymentIncome: taxProfile?.self_employment_income || 0,
+    superContributions: taxProfile?.super_concessional_contributions || 0,
     rrspContributions: taxProfile?.rrsp_contributions || 0,
-    rrspRoom: taxProfile?.rrsp_room || 0,
-    tfsaRoom: taxProfile?.tfsa_room || 0,
     filingStatus: taxProfile?.filing_status || "not_filed",
     charitableDonations: taxProfile?.charitable_donations || 0,
     medicalExpenses: taxProfile?.medical_expenses || 0,
     homeOfficeExpenses: taxProfile?.home_office_expenses || 0,
+    estimatedTotalTax: estimate.totalTax,
+    estimatedRefundOrOwing: estimate.refundOrOwing,
+    effectiveTaxRate: `${(estimate.effectiveRate * 100).toFixed(1)}%`,
+    marginalTaxRate: `${(estimate.marginalRate * 100).toFixed(0)}%`,
   };
 
   return (
@@ -57,32 +76,20 @@ export default async function TaxPage() {
         {/* Left: Tax profile form + summary */}
         <div className="lg:col-span-2 space-y-4 overflow-y-auto">
           {/* Quick stats */}
-          {taxProfile && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="stat-card">
-                <p className="text-xs text-muted-foreground">Total Income</p>
-                <p className="text-lg font-bold text-foreground">
-                  {formatCurrency((taxProfile.employment_income || 0) + (taxProfile.self_employment_income || 0) + (taxProfile.investment_income || 0))}
-                </p>
-              </div>
-              <div className="stat-card">
-                <p className="text-xs text-muted-foreground">RRSP Contributions</p>
-                <p className="text-lg font-bold text-green-600">
-                  {formatCurrency(taxProfile.rrsp_contributions || 0)}
-                </p>
-              </div>
-              <div className="stat-card">
-                <p className="text-xs text-muted-foreground">Est. Refund</p>
-                <p className="text-lg font-bold text-primary">
-                  {taxProfile.expected_refund ? formatCurrency(taxProfile.expected_refund) : "—"}
-                </p>
-              </div>
-              <div className="stat-card">
-                <p className="text-xs text-muted-foreground">Filing Status</p>
-                <p className="text-sm font-semibold capitalize mt-1">{taxProfile.filing_status?.replace("_", " ") || "Not filed"}</p>
-              </div>
-            </div>
-          )}
+          {/* Automatic tax calculation + savings suggestions */}
+          <TaxCalculation
+            country={profile?.country || "AU"}
+            annualIncome={
+              (taxProfile?.employment_income || 0) +
+              (taxProfile?.self_employment_income || 0) +
+              (taxProfile?.investment_income || 0) +
+              (taxProfile?.rental_income || 0) ||
+              financialProfile?.annual_income || 0
+            }
+            taxWithheld={taxProfile?.tax_paid || 0}
+            superContribution={taxProfile?.super_concessional_contributions || 0}
+            taxYear={TAX_YEAR}
+          />
 
           <div className="glass-card p-5">
             <div className="flex items-center gap-2 mb-4">
