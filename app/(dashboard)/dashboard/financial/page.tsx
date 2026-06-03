@@ -54,7 +54,13 @@ export default async function FinancialPage() {
         {/* Left: Accounts */}
         <div className="lg:col-span-2 space-y-4 overflow-y-auto">
           {/* Summary */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="stat-card">
+              <p className="text-xs text-muted-foreground">Annual Income</p>
+              <p className="text-base font-bold text-green-600">
+                {formatCurrency(financialProfile?.annual_income || 0)}
+              </p>
+            </div>
             <div className="stat-card">
               <p className="text-xs text-muted-foreground">Net Worth</p>
               <p className="text-base font-bold">{formatCurrency(nw.netWorth)}</p>

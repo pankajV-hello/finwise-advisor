@@ -5,7 +5,7 @@ import {
   TrendingUp, TrendingDown, Receipt, Home, BookOpen,
   Target, Bell, ArrowRight, Sparkles, FileText, AlertTriangle
 } from "lucide-react";
-import { formatCurrency, calculateNetWorth, getFinancialHealthScore, computeSavingsRate } from "@/lib/utils";
+import { formatCurrency, calculateNetWorth, getFinancialHealthScore, computeSavingsRate, getActiveTaxYear } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -19,6 +19,7 @@ export default async function DashboardPage() {
     { data: goals },
     { data: alerts },
     { data: recentTx },
+    { data: taxProfile },
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user.id).single(),
     supabase.from("financial_profiles").select("*").eq("user_id", user.id).single(),
@@ -26,9 +27,16 @@ export default async function DashboardPage() {
     supabase.from("goals").select("*").eq("user_id", user.id).eq("status", "active").order("priority"),
     supabase.from("alerts").select("*").eq("user_id", user.id).eq("is_read", false).order("created_at", { ascending: false }).limit(3),
     supabase.from("transactions").select("*").eq("user_id", user.id).order("date", { ascending: false }).limit(5),
+    supabase.from("tax_profiles").select("*").eq("user_id", user.id).eq("tax_year", getActiveTaxYear()).single(),
   ]);
 
   const netWorthData = accounts ? calculateNetWorth(accounts) : { assets: 0, liabilities: 0, netWorth: 0 };
+
+  const cur = profile?.currency || "AUD";
+  const annualIncome = financialProfile?.annual_income || 0;
+  const taxPaid = taxProfile?.tax_paid || 0;
+  const superContrib = taxProfile?.super_concessional_contributions || 0;
+  const hasIncomeData = annualIncome > 0 || taxPaid > 0 || superContrib > 0;
 
   const healthScore = getFinancialHealthScore({
     emergencyFundMonths: financialProfile?.emergency_fund_months || 0,
@@ -123,6 +131,54 @@ export default async function DashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Income & Tax snapshot (auto-filled from payslip / documents) */}
+      {hasIncomeData && (
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              Income & Tax · {getActiveTaxYear()}
+            </h2>
+            <Link href="/dashboard/tax" className="text-xs text-primary hover:underline">Tax Advisor →</Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="glass-card p-4">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <TrendingUp className="w-3 h-3 text-green-600" /> Annual Income
+              </p>
+              <p className="text-lg font-bold mt-1">{formatCurrency(annualIncome, cur)}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                ~{formatCurrency(Math.round(annualIncome / 12), cur)}/mo
+              </p>
+            </div>
+            <div className="glass-card p-4">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Receipt className="w-3 h-3 text-red-500" /> Tax Paid
+              </p>
+              <p className="text-lg font-bold text-red-500 mt-1">{formatCurrency(taxPaid, cur)}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {annualIncome > 0 ? `${Math.round((taxPaid / annualIncome) * 100)}% effective` : "withheld"}
+              </p>
+            </div>
+            <div className="glass-card p-4">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-amber-500" /> Super / Retirement
+              </p>
+              <p className="text-lg font-bold mt-1">{formatCurrency(superContrib, cur)}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">contributions</p>
+            </div>
+            <div className="glass-card p-4">
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <TrendingUp className="w-3 h-3 text-blue-600" /> Take-Home
+              </p>
+              <p className="text-lg font-bold text-green-600 mt-1">
+                {formatCurrency(Math.max(0, annualIncome - taxPaid), cur)}
+              </p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">after tax</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick links */}
       <div>
