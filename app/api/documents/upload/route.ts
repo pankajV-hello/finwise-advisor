@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractDocumentData } from "@/lib/documents/extract";
+import { classifyDocument, annualisePayslip } from "@/lib/documents/mapping";
+import { getActiveTaxYear } from "@/lib/utils";
 
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -108,35 +110,17 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Map extracted data into the right fields ──────────────────────────────
-    const docType = (extracted?.documentType || "").toLowerCase();
-    const isPayslip = docType.includes("salary") || docType.includes("payslip") || docType.includes("pay_slip");
-    const isTaxForm = ["t4", "t1", "w2", "1040"].some((t) => docType.includes(t));
-    const isBank = docType.includes("bank");
-    const isInvestment = docType.includes("investment");
-    const taxYear = new Date().getFullYear();
+    const docClass = classifyDocument(extracted?.documentType);
+    const isPayslip = docClass === "payslip";
+    const isTaxForm = docClass === "tax_form";
+    const isBank = docClass === "bank";
+    const isInvestment = docClass === "investment";
+    const taxYear = getActiveTaxYear();
     const fieldsUpdated: string[] = [];
-
-    // Annualisation helper
-    const freqMultiplier = (f?: string): number => {
-      const s = (f || "").toLowerCase();
-      if (s.includes("week") && s.includes("fort")) return 26;
-      if (s.includes("fortnight") || s.includes("bi-week") || s.includes("biweek")) return 26;
-      if (s.includes("week")) return 52;
-      if (s.includes("month")) return 12;
-      if (s.includes("quarter")) return 4;
-      if (s.includes("annual") || s.includes("year")) return 1;
-      return 12; // sensible default
-    };
 
     // ── Payslip → financial_profiles + tax_profiles ──────────────────────────
     if (isPayslip && extracted?.incomeDetails) {
-      const inc = extracted.incomeDetails;
-      const mult = freqMultiplier(inc.payFrequency);
-      const annualIncome = inc.annualSalary && inc.annualSalary > 0
-        ? inc.annualSalary
-        : inc.grossPay ? Math.round(inc.grossPay * mult) : 0;
-      const annualTax = inc.taxDeducted ? Math.round(inc.taxDeducted * mult) : 0;
-      const annualSuper = inc.superContribution ? Math.round(inc.superContribution * mult) : 0;
+      const { annualIncome, annualTax, annualSuper } = annualisePayslip(extracted.incomeDetails);
 
       if (annualIncome > 0) {
         await supabase.from("financial_profiles").upsert(

@@ -5,7 +5,9 @@ import { PageHeader } from "@/components/layout/page-header";
 import { AIChat } from "@/components/chat/ai-chat";
 import { TaxProfileForm } from "@/components/tax/tax-profile-form";
 import { AdviceWarning } from "@/components/legal/advice-warning";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, getActiveTaxYear } from "@/lib/utils";
+
+const TAX_YEAR = getActiveTaxYear();
 
 const TAX_SUGGESTIONS = [
   "What RRSP deductions can I claim for 2024?",
@@ -22,14 +24,14 @@ export default async function TaxPage() {
   if (!user) redirect("/auth/login");
 
   const [{ data: taxProfile }, { data: financialProfile }, { data: profile }] = await Promise.all([
-    supabase.from("tax_profiles").select("*").eq("user_id", user.id).eq("tax_year", new Date().getFullYear() - 1).single(),
+    supabase.from("tax_profiles").select("*").eq("user_id", user.id).eq("tax_year", TAX_YEAR).single(),
     supabase.from("financial_profiles").select("*").eq("user_id", user.id).single(),
     supabase.from("profiles").select("country").eq("id", user.id).single(),
   ]);
 
   const userContext = {
     country: profile?.country || "CA",
-    taxYear: new Date().getFullYear() - 1,
+    taxYear: TAX_YEAR,
     employmentIncome: taxProfile?.employment_income || financialProfile?.annual_income || 0,
     selfEmploymentIncome: taxProfile?.self_employment_income || 0,
     rrspContributions: taxProfile?.rrsp_contributions || 0,
@@ -85,12 +87,12 @@ export default async function TaxPage() {
           <div className="glass-card p-5">
             <div className="flex items-center gap-2 mb-4">
               <FileText className="w-4 h-4 text-primary" />
-              <h2 className="font-semibold text-sm">Tax Year {new Date().getFullYear() - 1} Profile</h2>
+              <h2 className="font-semibold text-sm">Tax Year {TAX_YEAR} Profile</h2>
             </div>
             <TaxProfileForm
               userId={user.id}
               existingProfile={taxProfile}
-              taxYear={new Date().getFullYear() - 1}
+              taxYear={TAX_YEAR}
             />
           </div>
         </div>
@@ -108,7 +110,7 @@ export default async function TaxPage() {
               placeholder="Ask about deductions, RRSP, capital gains, T4, filing tips…"
               suggestedQuestions={TAX_SUGGESTIONS}
               userContext={userContext}
-              initialMessage={`Hello! I'm your FinWise Tax Advisor. I specialize in Canadian (CRA) and US (IRS) tax planning.\n\nI can help you with:\n- **RRSP/TFSA optimization** — maximizing your contributions and deductions\n- **T4, T1, T2 guidance** — understanding your slips and forms\n- **Deductions you may have missed** — home office, medical, charitable donations\n- **Capital gains & investment income** — proper reporting and tax treatment\n- **Self-employment income** — business expenses and quarterly instalments\n\nWhat would you like help with for your ${new Date().getFullYear() - 1} return?`}
+              initialMessage={`Hello! I'm your FinWise Tax Advisor. I specialize in Canadian (CRA) and US (IRS) tax planning.\n\nI can help you with:\n- **RRSP/TFSA optimization** — maximizing your contributions and deductions\n- **T4, T1, T2 guidance** — understanding your slips and forms\n- **Deductions you may have missed** — home office, medical, charitable donations\n- **Capital gains & investment income** — proper reporting and tax treatment\n- **Self-employment income** — business expenses and quarterly instalments\n\nWhat would you like help with for your ${TAX_YEAR} return?`}
               className="h-full"
             />
           </div>

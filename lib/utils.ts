@@ -31,6 +31,30 @@ export function formatPercent(value: number, decimals = 1): string {
   return `${value.toFixed(decimals)}%`;
 }
 
+/**
+ * Single source of truth for the tax year the app is actively collecting data
+ * for. ALL reads and writes of tax_profiles must use this so income/tax data
+ * saved by onboarding and document upload appears on the Tax Advisor page.
+ */
+export function getActiveTaxYear(): number {
+  return new Date().getFullYear();
+}
+
+/**
+ * Savings rate = (monthly income − monthly expenses) / monthly income.
+ * Clamped to [0, 1]. Returns 0 when income is unknown.
+ */
+export function computeSavingsRate(
+  annualIncome: number,
+  monthlyExpenses: number
+): number {
+  if (!annualIncome || annualIncome <= 0) return 0;
+  const monthlyIncome = annualIncome / 12;
+  if (monthlyIncome <= 0) return 0;
+  const rate = (monthlyIncome - Math.max(0, monthlyExpenses)) / monthlyIncome;
+  return Math.max(0, Math.min(1, rate));
+}
+
 export function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat("en-CA", {
     year: "numeric",

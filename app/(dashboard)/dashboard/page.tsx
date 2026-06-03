@@ -5,7 +5,7 @@ import {
   TrendingUp, TrendingDown, Receipt, Home, BookOpen,
   Target, Bell, ArrowRight, Sparkles, FileText, AlertTriangle
 } from "lucide-react";
-import { formatCurrency, calculateNetWorth, getFinancialHealthScore } from "@/lib/utils";
+import { formatCurrency, calculateNetWorth, getFinancialHealthScore, computeSavingsRate } from "@/lib/utils";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -33,9 +33,12 @@ export default async function DashboardPage() {
   const healthScore = getFinancialHealthScore({
     emergencyFundMonths: financialProfile?.emergency_fund_months || 0,
     debtToIncome: financialProfile?.annual_income
-      ? (netWorthData.liabilities / 12) / (financialProfile.annual_income / 12)
+      ? netWorthData.liabilities / financialProfile.annual_income
       : 0,
-    savingsRate: 0.12,
+    savingsRate: computeSavingsRate(
+      financialProfile?.annual_income || 0,
+      financialProfile?.monthly_expenses || 0
+    ),
     hasInsurance: false,
     hasWill: false,
     investmentDiversified: (accounts?.length || 0) > 2,

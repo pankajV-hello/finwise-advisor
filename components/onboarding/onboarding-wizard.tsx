@@ -8,7 +8,7 @@ import {
   Wallet, Target, PiggyBank, Plane, GraduationCap, CreditCard, Car,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, getActiveTaxYear } from "@/lib/utils";
 import { TERMS_VERSION, SHORT_DISCLAIMER, getAdviceWarning } from "@/lib/legal";
 import Link from "next/link";
 
@@ -117,7 +117,7 @@ export function OnboardingWizard({ userId, userName }: Props) {
   const finish = async () => {
     setSaving(true);
     const supabase = createClient();
-    const taxYear = new Date().getFullYear();
+    const taxYear = getActiveTaxYear();
 
     try {
       // 1. Profile
