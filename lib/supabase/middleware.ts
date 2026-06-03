@@ -45,7 +45,7 @@ async function runSession(request: NextRequest, initialResponse: NextResponse) {
 
   const { pathname } = request.nextUrl;
   const isAuthRoute = pathname.startsWith("/auth");
-  const isPublicRoute = pathname === "/";
+  const isPublicRoute = pathname === "/" || pathname.startsWith("/legal");
 
   if (!user && !isAuthRoute && !isPublicRoute) {
     const redirectUrl = request.nextUrl.clone();
