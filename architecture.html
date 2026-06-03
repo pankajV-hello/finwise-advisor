@@ -131,13 +131,15 @@
     <nav class="tabs">
       <a href="#overview" class="tab active">Overview</a>
       <a href="#functional" class="tab">Functional</a>
+      <a href="#pipeline" class="tab">Doc Pipeline</a>
+      <a href="#taxengine" class="tab">Tax Engine</a>
       <a href="#nonfunctional" class="tab">Non-Functional</a>
       <a href="#technical" class="tab">Technical</a>
-      <a href="#data" class="tab">Data Model</a>
-      <a href="#security" class="tab">Security</a>
+      <a href="#data" class="tab">Data</a>
+      <a href="#testing" class="tab">Testing</a>
       <a href="#deploy" class="tab">Deployment</a>
     </nav>
-    <span class="badge b-p">v2.0 · 2026</span>
+    <span class="badge b-l">● LIVE on Cloudflare</span>
   </div>
 </header>
 
@@ -152,9 +154,13 @@
     <div class="grid g4" style="margin-top:34px">
       <div class="card metric"><div class="v" style="color:var(--primary)">5</div><div class="l">AI Advisor Agents</div></div>
       <div class="card metric"><div class="v" style="color:var(--sky)">14</div><div class="l">Database Tables</div></div>
-      <div class="card metric"><div class="v" style="color:var(--gold)">4</div><div class="l">Jurisdictions</div></div>
-      <div class="card metric"><div class="v" style="color:var(--lime)">2</div><div class="l">Entity Types</div></div>
+      <div class="card metric"><div class="v" style="color:var(--gold)">4</div><div class="l">Tax Jurisdictions</div></div>
+      <div class="card metric"><div class="v" style="color:var(--lime)">78</div><div class="l">Passing Tests</div></div>
     </div>
+    <p style="margin-top:18px;font-size:13px;color:var(--muted)">
+      Live at <b style="color:var(--primary)">finwise-advisor.verma-pankaj.workers.dev</b> ·
+      Next.js 15 + React 19 on Cloudflare Workers · 100% free AI stack (Groq)
+    </p>
   </div>
 </div>
 
@@ -262,6 +268,93 @@
 </div>
 </section>
 
+<!-- ════════ DOCUMENT PIPELINE ════════ -->
+<section id="pipeline">
+<div class="wrap">
+  <div class="sec-head">
+    <span class="sec-tag fn">Document Intelligence</span>
+    <h2>Upload → Extract → Auto-fill Pipeline</h2>
+    <p>A payslip, bank statement, or tax form becomes structured data that populates every relevant tab — all on the free Groq tier, all on Cloudflare's edge runtime.</p>
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-title">📄 Extraction pipeline (edge-compatible, $0 cost)</div>
+    <div class="flow">
+      <div class="node">Upload<br/>PDF · image · CSV</div><span class="arr">→</span>
+      <div class="node">Route by type</div><span class="arr">→</span>
+      <div class="node" style="background:var(--sky-soft);border-color:#bde9fb">unpdf<br/>(PDF text, edge)</div><span class="arr">→</span>
+      <div class="node" style="background:var(--lime-soft);border-color:#cce8bd">Groq<br/>parse → JSON</div><span class="arr">→</span>
+      <div class="node">Map to fields</div>
+    </div>
+    <div class="grid g3" style="margin-top:14px">
+      <div><span class="badge b-s">PDF</span><p style="font-size:12px;color:var(--muted);margin-top:6px"><b>unpdf</b> (serverless pdf.js) extracts text on Workers → Groq parses. Scanned PDFs prompt for an image.</p></div>
+      <div><span class="badge b-l">Image</span><p style="font-size:12px;color:var(--muted);margin-top:6px">Groq vision (llama-4-scout) reads screenshots of payslips/receipts directly.</p></div>
+      <div><span class="badge b-g">CSV</span><p style="font-size:12px;color:var(--muted);margin-top:6px">Bank exports parsed and auto-categorised into transactions.</p></div>
+    </div>
+  </div>
+
+  <!-- Autofill mapping -->
+  <div class="card">
+    <div class="card-title">🔀 Auto-fill mapping — where extracted data lands</div>
+    <div class="scrollx">
+    <table>
+      <tr><th>Document</th><th>Extracted</th><th>→ Table</th><th>→ Visible on</th></tr>
+      <tr><td><span class="q">Payslip</span></td><td>Annual salary / gross, tax, super, YTD</td><td>financial_profiles · tax_profiles</td><td>Dashboard · Financial · Tax</td></tr>
+      <tr><td><span class="q">T4 / W-2 / 1040</span></td><td>Income, tax owing, refund, contributions</td><td>tax_profiles</td><td>Tax Advisor</td></tr>
+      <tr><td><span class="q">Bank statement</span></td><td>Transactions (date, amount, category)</td><td>transactions</td><td>Bookkeeper</td></tr>
+      <tr><td><span class="q">Investment</span></td><td>Holdings, total value</td><td>accounts</td><td>Dashboard net worth · Financial</td></tr>
+    </table>
+    </div>
+    <div class="note" style="margin-top:16px"><b>YTD accuracy:</b> Annualisation prefers a stated annual salary, then projects year-to-date figures over the financial year (AU Jul · NZ Apr · CA/US Jan), then falls back to period × frequency — so variable/hourly pay is handled correctly, not just 12× of one period.</div>
+  </div>
+</div>
+</section>
+
+<!-- ════════ TAX ENGINE ════════ -->
+<section id="taxengine">
+<div class="wrap">
+  <div class="sec-head">
+    <span class="sec-tag fn">Automatic Tax Engine</span>
+    <h2>Calculate · Estimate · Optimise</h2>
+    <p>A deterministic, unit-tested tax calculator for four authorities, with rule-based savings suggestions. No AI cost — pure functions, instant results.</p>
+  </div>
+
+  <div class="grid g2" style="margin-bottom:18px">
+    <div class="card">
+      <div class="card-title">🧮 Tax Calculator (lib/tax/calculator.ts)</div>
+      <div class="flow" style="margin-bottom:12px">
+        <div class="node">Gross − deductions<br/>− allowances</div><span class="arr">→</span>
+        <div class="node">Progressive<br/>brackets</div><span class="arr">→</span>
+        <div class="node">+ levy<br/>(Medicare/ACC)</div><span class="arr">→</span>
+        <div class="node" style="background:var(--primary-soft);border-color:#d6dcfb">Refund<br/>or owing</div>
+      </div>
+      <ul class="ck">
+        <li>ATO · IRD · CRA · IRS brackets (2024-25)</li>
+        <li>Medicare levy (AU) · ACC (NZ) · personal allowance (CA) · standard deduction (US)</li>
+        <li>Effective & marginal rate, bracket-by-bracket breakdown</li>
+        <li>Refund/owing vs tax withheld</li>
+        <li>18 unit tests verify the math</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">💡 Savings Suggestions (lib/tax/suggestions.ts)</div>
+      <div class="scrollx">
+      <table>
+        <tr><th>🇦🇺 ATO</th><th>🇳🇿 IRD</th><th>🇨🇦 CRA</th><th>🇺🇸 IRS</th></tr>
+        <tr><td>Salary sacrifice super</td><td>KiwiSaver match</td><td>RRSP deduction</td><td>401(k)</td></tr>
+        <tr><td>Work deductions</td><td>Correct PIR</td><td>TFSA / FHSA</td><td>IRA / Roth</td></tr>
+        <tr><td>MLS / private health</td><td>Donation rebate</td><td>Credits</td><td>HSA</td></tr>
+        <tr><td>Donations, timing</td><td>Working for Families</td><td>Medical/tuition</td><td>Itemize vs standard</td></tr>
+      </table>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:12px">Each tip shows an estimated $ saving where calculable. The AI advisor receives the computed estimate as context, so chat answers reference the user's real numbers.</p>
+    </div>
+  </div>
+
+  <div class="ok">✓ <b>Worked example (AU $156,250):</b> $39,151 income tax + $3,125 Medicare = $42,276 total · 37% marginal · 27% effective · $48,360 withheld → <b>~$6,084 refund</b> — all computed automatically from the uploaded payslip.</div>
+</div>
+</section>
+
 <!-- ════════ NON-FUNCTIONAL ════════ -->
 <section id="nonfunctional">
 <div class="wrap">
@@ -359,8 +452,8 @@
     <div class="layer" style="border-color:#cce8bd">
       <span class="layer-lbl" style="color:#4e9128">Infrastructure · Edge / Cloud</span>
       <div class="boxes">
-        <div class="box"><div class="e">▲</div><div class="n">Hosting</div><div class="d">Vercel / CF Pages</div></div>
-        <div class="box"><div class="e">🌍</div><div class="n">CDN + DNS</div><div class="d">Cloudflare</div></div>
+        <div class="box"><div class="e">⚡</div><div class="n">Cloudflare Workers</div><div class="d">OpenNext · workerd</div></div>
+        <div class="box"><div class="e">🌍</div><div class="n">CDN + DNS</div><div class="d">Cloudflare edge</div></div>
         <div class="box"><div class="e">🔒</div><div class="n">WAF / DDoS</div><div class="d">Edge security</div></div>
         <div class="box"><div class="e">📦</div><div class="n">Object Storage</div><div class="d">Private bucket</div></div>
       </div>
@@ -371,15 +464,15 @@
   <div class="grid g3" style="margin-bottom:22px">
     <div class="card">
       <div class="card-title">Frontend</div>
-      <ul class="ck"><li>Next.js 14 (App Router, RSC)</li><li>React 18 + TypeScript</li><li>Tailwind CSS design system</li><li>Radix UI primitives</li><li>Recharts (financial charts)</li><li>lucide-react icons</li></ul>
+      <ul class="ck"><li>Next.js 15 (App Router, RSC)</li><li>React 19 + TypeScript</li><li>Tailwind CSS (bright design system)</li><li>Radix UI primitives</li><li>Recharts (financial charts)</li><li>lucide-react icons</li></ul>
     </div>
     <div class="card">
       <div class="card-title">Backend & Data</div>
-      <ul class="ck"><li>Supabase Postgres 15</li><li>Row-Level Security (RLS)</li><li>Supabase Auth (JWT)</li><li>Supabase Storage (private)</li><li>Next.js API routes</li><li>pdf-parse / sips extraction</li></ul>
+      <ul class="ck"><li>Supabase Postgres 15</li><li>Row-Level Security (RLS)</li><li>Supabase Auth (JWT)</li><li>Supabase Storage (private)</li><li>Next.js API routes</li><li>unpdf (edge PDF extraction)</li></ul>
     </div>
     <div class="card">
       <div class="card-title">AI & Integrations</div>
-      <ul class="ck"><li>Groq (default · free)</li><li>Ollama (local · free)</li><li>Anthropic Claude (premium)</li><li>Prompt caching</li><li>Basiq · Akahu · Plaid</li><li>Provider abstraction layer</li></ul>
+      <ul class="ck"><li>Groq (default · free tier)</li><li>Ollama (local · free)</li><li>Anthropic via fetch (opt-in, no SDK)</li><li>Tax engine (pure TS, no AI)</li><li>Basiq · Akahu · Plaid</li><li>vitest (78 tests)</li></ul>
     </div>
   </div>
 
@@ -535,31 +628,32 @@
     <p>How the platform is hosted, served, and secured in production.</p>
   </div>
 
-  <div class="grid g2" style="margin-bottom:18px">
-    <div class="card">
-      <div class="card-title">▲ Recommended — Vercel + Cloudflare</div>
-      <div class="flow" style="margin-bottom:12px">
-        <div class="node">User</div><span class="arr">→</span>
-        <div class="node">Cloudflare<br/>DNS·CDN·WAF</div><span class="arr">→</span>
-        <div class="node">Vercel<br/>Next.js + Node</div><span class="arr">→</span>
-        <div class="node">Supabase</div>
-      </div>
-      <ul class="ck">
-        <li>Full Node.js runtime — all features work</li>
-        <li>PDF/document extraction supported</li>
-        <li>Cloudflare for DNS, CDN, DDoS, WAF</li>
-        <li>Zero-config Next.js deploys</li>
-      </ul>
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-title">● LIVE — Cloudflare Workers (OpenNext)</div>
+    <div class="flow" style="margin-bottom:12px">
+      <div class="node">User</div><span class="arr">→</span>
+      <div class="node">Cloudflare<br/>edge network</div><span class="arr">→</span>
+      <div class="node" style="background:var(--lime-soft);border-color:#cce8bd">Worker<br/>OpenNext · workerd</div><span class="arr">→</span>
+      <div class="node">Supabase<br/>(ap-southeast-2)</div>
     </div>
-    <div class="card">
-      <div class="card-title">☁️ Alternative — Cloudflare Pages</div>
-      <div class="flow" style="margin-bottom:12px">
-        <div class="node">User</div><span class="arr">→</span>
-        <div class="node">Cloudflare<br/>Pages (edge)</div><span class="arr">→</span>
-        <div class="node">Workers<br/>(V8 isolate)</div><span class="arr">→</span>
-        <div class="node">Supabase</div>
-      </div>
-      <div class="note" style="margin-top:0"><b>Edge runtime constraint:</b> Cloudflare Workers run V8 isolates, not Node.js. The scanned-PDF path (sips/child_process/fs) and pdf-parse must be replaced with edge-compatible extraction (native PDF vision) before this path works.</div>
+    <div class="grid g3">
+      <div><span class="badge b-l">Runtime</span><p style="font-size:12px;color:var(--muted);margin-top:6px">Next.js 15 built with <b>@opennextjs/cloudflare</b>, running on workerd (V8 isolates) with <code>nodejs_compat</code>.</p></div>
+      <div><span class="badge b-s">Edge-safe code</span><p style="font-size:12px;color:var(--muted);margin-top:6px">Anthropic via <b>fetch</b> (no SDK), PDF via <b>unpdf</b>, Node-only paths guarded — the worker bundles cleanly.</p></div>
+      <div><span class="badge b-g">Config</span><p style="font-size:12px;color:var(--muted);margin-top:6px">Public Supabase URL/key as code fallbacks; service-role & Groq keys as Worker secrets. Fail-open middleware.</p></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-title">🔑 Configuration & resilience lessons</div>
+    <div class="scrollx">
+    <table>
+      <tr><th>Challenge</th><th>Resolution</th></tr>
+      <tr><td>OpenNext requires Next ≥15.5</td><td>Upgraded Next 14 → 15 + React 19 (async cookies/params)</td></tr>
+      <tr><td>Anthropic SDK won't bundle on workerd</td><td>Replaced SDK with raw <code>fetch</code> + SSE parsing</td></tr>
+      <tr><td>pdf-parse / sips are Node-only</td><td>unpdf (serverless pdf.js) + dynamic-import guards</td></tr>
+      <tr><td>NEXT_PUBLIC_* inlined at build → 500s</td><td>Public values as code fallbacks (RLS-safe)</td></tr>
+      <tr><td>A session error 500'd every page</td><td>Fail-open middleware — public pages always render</td></tr>
+    </table>
     </div>
   </div>
 
@@ -567,11 +661,51 @@
     <div class="card-title">🚀 CI/CD Pipeline</div>
     <div class="flow">
       <div class="node">git push<br/>main</div><span class="arr">→</span>
-      <div class="node">GitHub</div><span class="arr">→</span>
-      <div class="node">Build<br/>next build</div><span class="arr">→</span>
-      <div class="node">Type check<br/>+ lint</div><span class="arr">→</span>
-      <div class="node">Deploy<br/>preview</div><span class="arr">→</span>
-      <div class="node" style="background:var(--lime-soft);border-color:#cce8bd">Promote<br/>production</div>
+      <div class="node">GitHub<br/>(pankajV-hello)</div><span class="arr">→</span>
+      <div class="node">npm test<br/>78 tests</div><span class="arr">→</span>
+      <div class="node">next build<br/>+ OpenNext</div><span class="arr">→</span>
+      <div class="node">wrangler<br/>deploy</div><span class="arr">→</span>
+      <div class="node" style="background:var(--lime-soft);border-color:#cce8bd">Live on<br/>Workers</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ════════ TESTING ════════ -->
+<section id="testing">
+<div class="wrap">
+  <div class="sec-head">
+    <span class="sec-tag nf">Quality & Testing</span>
+    <h2>Regression Suite</h2>
+    <p>A financial app's math must be exact. 78 vitest unit tests guard the critical pure logic and lock in fixes against regression.</p>
+  </div>
+  <div class="grid g4" style="margin-bottom:18px">
+    <div class="card metric"><div class="v" style="color:var(--lime)">78</div><div class="l">Passing tests</div></div>
+    <div class="card metric"><div class="v" style="color:var(--primary)">5</div><div class="l">Test suites</div></div>
+    <div class="card metric"><div class="v" style="color:var(--gold)">18</div><div class="l">Tax-math tests</div></div>
+    <div class="card metric"><div class="v" style="color:var(--sky)">2</div><div class="l">Bugs caught & fixed</div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card">
+      <div class="card-title">🧪 Coverage</div>
+      <ul class="ck">
+        <li><b>utils</b> — currency, mortgage payments, amortization, net worth, health score, savings rate</li>
+        <li><b>tax</b> — ATO/IRD/CRA/IRS brackets, levies, deductions, refund, suggestions</li>
+        <li><b>mapping</b> — pay-frequency, doc classification, YTD projection, FY months</li>
+        <li><b>agents</b> — AI provider selection</li>
+        <li><b>consistency</b> — tax-year guard (prevents the bug recurring)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title">🐛 Bugs the suite surfaced</div>
+      <div class="security-item" style="border:none;padding:8px 0">
+        <div class="security-icon" style="background:var(--red-soft)">1</div>
+        <div class="security-content"><h4>Tax-year mismatch</h4><p>Data written under year N but read under N-1 — auto-filled tax never appeared. Fixed with one source of truth + a guard test.</p></div>
+      </div>
+      <div class="security-item" style="border:none;padding:8px 0">
+        <div class="security-icon" style="background:var(--gold-soft)">2</div>
+        <div class="security-content"><h4>Hardcoded savings rate</h4><p>Health score used a fixed 0.12 instead of real income vs expenses. Now computed & tested.</p></div>
+      </div>
     </div>
   </div>
 </div>
@@ -579,8 +713,8 @@
 
 <footer>
   <div style="font-size:18px;margin-bottom:6px">✦</div>
-  <b style="color:var(--primary)">FinWise AI</b> · Architecture Blueprint · finwiseai-advisor.com<br/>
-  Next.js 14 · Supabase · Groq/Ollama/Anthropic · Cloudflare · AU·NZ·CA·US
+  <b style="color:var(--primary)">FinWise AI</b> · Architecture Blueprint · finwise-advisor.com<br/>
+  Next.js 15 · React 19 · Supabase · Groq (free) · unpdf · Cloudflare Workers · 78 tests · AU·NZ·CA·US
 </footer>
 
 <script>
