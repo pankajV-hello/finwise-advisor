@@ -120,7 +120,13 @@ export async function POST(req: NextRequest) {
 
     // ── Payslip → financial_profiles + tax_profiles ──────────────────────────
     if (isPayslip && extracted?.incomeDetails) {
-      const { annualIncome, annualTax, annualSuper } = annualisePayslip(extracted.incomeDetails);
+      // Use the user's country for financial-year-aware YTD projection
+      const { data: prof } = await supabase
+        .from("profiles").select("country").eq("id", user.id).single();
+      const { annualIncome, annualTax, annualSuper } = annualisePayslip(
+        extracted.incomeDetails,
+        prof?.country
+      );
 
       if (annualIncome > 0) {
         await supabase.from("financial_profiles").upsert(

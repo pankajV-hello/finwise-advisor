@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { freqMultiplier, classifyDocument, annualisePayslip } from "@/lib/documents/mapping";
+import {
+  freqMultiplier, classifyDocument, annualisePayslip,
+  financialYearStartMonth, monthsElapsedInFY, annualiseFromYTD,
+} from "@/lib/documents/mapping";
 
 describe("freqMultiplier", () => {
   it("maps each frequency correctly", () => {
@@ -86,12 +89,82 @@ describe("annualisePayslip", () => {
 
   it("returns zeros when no usable income data", () => {
     const r = annualisePayslip({ payFrequency: "monthly" });
-    expect(r).toEqual({ annualIncome: 0, annualTax: 0, annualSuper: 0 });
+    expect(r.annualIncome).toBe(0);
+    expect(r.annualTax).toBe(0);
+    expect(r.annualSuper).toBe(0);
+    expect(r.method).toBe("none");
   });
 
   it("ignores negative/garbage values", () => {
     const r = annualisePayslip({ grossPay: -100, taxDeducted: -50, payFrequency: "monthly" });
     expect(r.annualIncome).toBe(0);
     expect(r.annualTax).toBe(0);
+  });
+
+  it("reports the method used", () => {
+    expect(annualisePayslip({ annualSalary: 100000 }).method).toBe("stated_salary");
+    expect(annualisePayslip({ grossPay: 5000, payFrequency: "monthly" }).method).toBe("period_multiplier");
+    expect(annualisePayslip({}).method).toBe("none");
+  });
+});
+
+describe("financialYearStartMonth", () => {
+  it("AU = July, NZ = April, CA/US = January", () => {
+    expect(financialYearStartMonth("AU")).toBe(7);
+    expect(financialYearStartMonth("NZ")).toBe(4);
+    expect(financialYearStartMonth("CA")).toBe(1);
+    expect(financialYearStartMonth("US")).toBe(1);
+    expect(financialYearStartMonth(undefined)).toBe(7); // defaults to AU
+  });
+});
+
+describe("monthsElapsedInFY", () => {
+  it("AU FY (Jul start): April is month 10", () => {
+    expect(monthsElapsedInFY("2026-04-30", 7)).toBe(10);
+  });
+  it("AU FY: July is month 1", () => {
+    expect(monthsElapsedInFY("2025-07-31", 7)).toBe(1);
+  });
+  it("AU FY: June is month 12", () => {
+    expect(monthsElapsedInFY("2026-06-30", 7)).toBe(12);
+  });
+  it("calendar FY (Jan start): March is month 3", () => {
+    expect(monthsElapsedInFY("2026-03-15", 1)).toBe(3);
+  });
+  it("returns 0 for an invalid date", () => {
+    expect(monthsElapsedInFY("not-a-date", 7)).toBe(0);
+    expect(monthsElapsedInFY(undefined, 7)).toBe(0);
+  });
+});
+
+describe("annualiseFromYTD", () => {
+  it("projects YTD over the full year", () => {
+    // $124,168 YTD over 10 months → ~$149,000/yr
+    expect(annualiseFromYTD(124168, 10)).toBe(149002);
+  });
+  it("returns 0 for missing data", () => {
+    expect(annualiseFromYTD(0, 10)).toBe(0);
+    expect(annualiseFromYTD(50000, 0)).toBe(0);
+  });
+});
+
+describe("annualisePayslip with YTD", () => {
+  it("uses YTD projection when no annual salary is stated", () => {
+    const r = annualisePayslip(
+      { ytdGross: 124168, ytdTax: 38000, periodEnd: "2026-04-30", payFrequency: "monthly" },
+      "AU"
+    );
+    expect(r.method).toBe("ytd_projection");
+    expect(r.annualIncome).toBe(149002); // 124168/10*12
+    expect(r.annualTax).toBe(45600); // 38000/10*12
+  });
+
+  it("stated annual salary still wins over YTD", () => {
+    const r = annualisePayslip(
+      { annualSalary: 156250, ytdGross: 124168, periodEnd: "2026-04-30" },
+      "AU"
+    );
+    expect(r.method).toBe("stated_salary");
+    expect(r.annualIncome).toBe(156250);
   });
 });

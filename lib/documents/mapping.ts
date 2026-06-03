@@ -38,28 +38,93 @@ export interface PayslipIncome {
   superContribution?: number;
   payFrequency?: string;
   annualSalary?: number;
+  periodEnd?: string; // YYYY-MM-DD
+  ytdGross?: number;
+  ytdTax?: number;
+  ytdSuper?: number;
 }
 
 export interface AnnualisedFigures {
   annualIncome: number;
   annualTax: number;
   annualSuper: number;
+  method: "stated_salary" | "ytd_projection" | "period_multiplier" | "none";
+}
+
+/** Financial-year start month (1-12) by country. */
+export function financialYearStartMonth(country?: string): number {
+  switch ((country || "AU").toUpperCase()) {
+    case "AU": return 7; // July
+    case "NZ": return 4; // April
+    case "CA":
+    case "US":
+    default: return 1; // January
+  }
+}
+
+/** Months elapsed in the financial year up to (and including) the period end. */
+export function monthsElapsedInFY(periodEndISO: string | undefined, fyStartMonth: number): number {
+  if (!periodEndISO) return 0;
+  const d = new Date(periodEndISO);
+  if (isNaN(d.getTime())) return 0;
+  const m = d.getMonth() + 1; // 1-12
+  let elapsed = m - fyStartMonth + 1;
+  if (elapsed <= 0) elapsed += 12;
+  return Math.min(12, Math.max(1, elapsed));
+}
+
+/** Project a full-year figure from a year-to-date amount and months elapsed. */
+export function annualiseFromYTD(ytd: number | undefined, monthsElapsed: number): number {
+  if (!ytd || ytd <= 0 || monthsElapsed <= 0) return 0;
+  return Math.round((ytd / monthsElapsed) * 12);
 }
 
 /**
- * Annualise payslip figures. Prefers a stated annual salary; otherwise
- * multiplies the per-period gross by the frequency multiplier.
+ * Annualise payslip figures. Priority (most → least accurate):
+ *   1. Stated annual salary on the slip
+ *   2. Year-to-date figures projected over the financial year
+ *   3. Single-period gross × pay frequency
  */
-export function annualisePayslip(inc: PayslipIncome): AnnualisedFigures {
+export function annualisePayslip(inc: PayslipIncome, country?: string): AnnualisedFigures {
   const mult = freqMultiplier(inc.payFrequency);
-  const annualIncome =
-    inc.annualSalary && inc.annualSalary > 0
-      ? Math.round(inc.annualSalary)
-      : inc.grossPay && inc.grossPay > 0
-        ? Math.round(inc.grossPay * mult)
-        : 0;
-  const annualTax = inc.taxDeducted && inc.taxDeducted > 0 ? Math.round(inc.taxDeducted * mult) : 0;
-  const annualSuper =
-    inc.superContribution && inc.superContribution > 0 ? Math.round(inc.superContribution * mult) : 0;
-  return { annualIncome, annualTax, annualSuper };
+  const fyStart = financialYearStartMonth(country);
+  const monthsElapsed = monthsElapsedInFY(inc.periodEnd, fyStart);
+
+  // 1. Stated annual salary (income only; tax/super still need a basis)
+  if (inc.annualSalary && inc.annualSalary > 0) {
+    return {
+      annualIncome: Math.round(inc.annualSalary),
+      annualTax:
+        annualiseFromYTD(inc.ytdTax, monthsElapsed) ||
+        (inc.taxDeducted && inc.taxDeducted > 0 ? Math.round(inc.taxDeducted * mult) : 0),
+      annualSuper:
+        annualiseFromYTD(inc.ytdSuper, monthsElapsed) ||
+        (inc.superContribution && inc.superContribution > 0 ? Math.round(inc.superContribution * mult) : 0),
+      method: "stated_salary",
+    };
+  }
+
+  // 2. Year-to-date projection
+  const ytdIncome = annualiseFromYTD(inc.ytdGross, monthsElapsed);
+  if (ytdIncome > 0) {
+    return {
+      annualIncome: ytdIncome,
+      annualTax:
+        annualiseFromYTD(inc.ytdTax, monthsElapsed) ||
+        (inc.taxDeducted && inc.taxDeducted > 0 ? Math.round(inc.taxDeducted * mult) : 0),
+      annualSuper:
+        annualiseFromYTD(inc.ytdSuper, monthsElapsed) ||
+        (inc.superContribution && inc.superContribution > 0 ? Math.round(inc.superContribution * mult) : 0),
+      method: "ytd_projection",
+    };
+  }
+
+  // 3. Single-period × frequency
+  const annualIncome = inc.grossPay && inc.grossPay > 0 ? Math.round(inc.grossPay * mult) : 0;
+  return {
+    annualIncome,
+    annualTax: inc.taxDeducted && inc.taxDeducted > 0 ? Math.round(inc.taxDeducted * mult) : 0,
+    annualSuper: inc.superContribution && inc.superContribution > 0 ? Math.round(inc.superContribution * mult) : 0,
+    method: annualIncome > 0 ? "period_multiplier" : "none",
+  };
 }

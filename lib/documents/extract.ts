@@ -63,6 +63,10 @@ export interface ExtractedDocument {
     period?: string; employer?: string;
     payFrequency?: string;  // monthly | fortnightly | weekly | quarterly | annually
     annualSalary?: number;  // if stated on the document
+    periodEnd?: string;     // YYYY-MM-DD end of this pay period
+    ytdGross?: number;      // year-to-date gross earnings (if shown)
+    ytdTax?: number;        // year-to-date tax withheld (if shown)
+    ytdSuper?: number;      // year-to-date super / retirement contributions
   };
   taxDetails?: {
     taxYear?: number; totalIncome?: number; taxableIncome?: number;
@@ -87,7 +91,7 @@ Return ONLY a valid JSON object (no markdown, no explanation):
   "summary": "2-3 sentence plain English summary",
   "data": {},
   "transactions": [{"date":"YYYY-MM-DD","description":"string","amount":number,"type":"credit|debit","category":"string"}],
-  "incomeDetails": {"grossPay":number (this pay period),"netPay":number,"taxDeducted":number,"superContribution":number,"medicareLevy":number,"eiPremium":number,"cppContribution":number,"period":"string","employer":"string","payFrequency":"monthly|fortnightly|weekly|quarterly|annually","annualSalary":number (if the document states an annual salary)},
+  "incomeDetails": {"grossPay":number (this pay period),"netPay":number,"taxDeducted":number,"superContribution":number,"medicareLevy":number,"eiPremium":number,"cppContribution":number,"period":"string","periodEnd":"YYYY-MM-DD (end of this pay period)","employer":"string","payFrequency":"monthly|fortnightly|weekly|quarterly|annually","annualSalary":number (if stated),"ytdGross":number (year-to-date gross if a YTD column is shown),"ytdTax":number (YTD tax withheld),"ytdSuper":number (YTD super/retirement)},
   "taxDetails": {"taxYear":number,"totalIncome":number,"taxableIncome":number,"taxOwing":number,"refundOwing":number,"rrspContributions":number},
   "investmentDetails": {"accountType":"string","totalValue":number,"holdings":[],"deposits":number,"withdrawals":number,"gains":number}
 }
