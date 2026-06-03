@@ -11,7 +11,12 @@
  *   AI_PROVIDER=anthropic → Anthropic API    (paid)
  */
 
-import Anthropic from "@anthropic-ai/sdk";
+// No SDK import — Anthropic is called via fetch so the worker bundles cleanly
+// on edge runtimes (Cloudflare Workers / OpenNext).
+
+const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_VERSION = "2023-06-01";
+const ANTHROPIC_MODEL = "claude-sonnet-4-6";
 
 export type AgentType =
   | "tax"
@@ -220,42 +225,63 @@ export interface ChatMessage {
   content: string;
 }
 
-// ─── Anthropic streaming ─────────────────────────────────────────────────────
+// ─── Anthropic streaming (raw fetch SSE — no SDK) ────────────────────────────
 async function streamAnthropic(
   agent: AgentType,
   messages: ChatMessage[],
   userContext?: Record<string, unknown>
 ): Promise<ReadableStream<string>> {
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
   const contextNote = userContext
     ? `\n\n---\nUSER FINANCIAL CONTEXT:\n${JSON.stringify(userContext, null, 2)}\n---`
     : "";
 
-  const stream = await anthropic.messages.create({
-    model: PROVIDER_MODELS.anthropic,
-    max_tokens: 2048,
-    system: [
-      {
-        type: "text",
-        text: AGENT_SYSTEM_PROMPTS[agent] + contextNote,
-        cache_control: { type: "ephemeral" },
-      },
-    ],
-    messages: messages.map((m) => ({ role: m.role, content: m.content })),
-    stream: true,
+  const response = await fetch(ANTHROPIC_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY!,
+      "anthropic-version": ANTHROPIC_VERSION,
+    },
+    body: JSON.stringify({
+      model: PROVIDER_MODELS.anthropic,
+      max_tokens: 2048,
+      system: [
+        {
+          type: "text",
+          text: AGENT_SYSTEM_PROMPTS[agent] + contextNote,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
+      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      stream: true,
+    }),
   });
+
+  if (!response.ok) throw new Error(`Anthropic API error: ${await response.text()}`);
+
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
 
   return new ReadableStream({
     async start(controller) {
-      for await (const event of stream) {
-        if (
-          event.type === "content_block_delta" &&
-          event.delta.type === "text_delta"
-        ) {
-          controller.enqueue(event.delta.text);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split("\n")) {
+          const trimmed = line.replace(/^data: /, "").trim();
+          if (!trimmed || !trimmed.startsWith("{")) continue;
+          try {
+            const evt = JSON.parse(trimmed);
+            if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+              controller.enqueue(evt.delta.text);
+            }
+          } catch {
+            /* skip non-JSON SSE lines */
+          }
         }
-        if (event.type === "message_stop") controller.close();
       }
+      controller.close();
     },
   });
 }

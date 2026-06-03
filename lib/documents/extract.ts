@@ -7,8 +7,35 @@
  * CSV               → text model
  */
 
-import Anthropic from "@anthropic-ai/sdk";
 import { getProvider } from "@/lib/agents";
+
+// Anthropic via raw fetch (no SDK) so this bundles on edge runtimes.
+const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_VERSION = "2023-06-01";
+const ANTHROPIC_MODEL = "claude-sonnet-4-6";
+
+async function anthropicMessage(
+  content: unknown,
+  systemPrompt: string = EXTRACTION_PROMPT
+): Promise<string> {
+  const res = await fetch(ANTHROPIC_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY!,
+      "anthropic-version": ANTHROPIC_VERSION,
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 4096,
+      system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
+      messages: [{ role: "user", content }],
+    }),
+  });
+  if (!res.ok) throw new Error(`Anthropic API error: ${await res.text()}`);
+  const data = await res.json();
+  return data?.content?.[0]?.type === "text" ? data.content[0].text : "";
+}
 
 // Node-only modules are imported dynamically inside renderPdfToImage so this
 // file still bundles for edge runtimes (e.g. Cloudflare Workers) where they
@@ -67,8 +94,12 @@ Rules: exact figures only, omit inapplicable keys, return ONLY the JSON object.`
 
 // ─── PDF text extraction (pdf-parse v2 — PDFParse class) ─────────────────────
 async function extractPdfText(buffer: Buffer): Promise<string> {
+  // Node-only runtime; skip on edge (Cloudflare Workers)
+  if (typeof process === "undefined" || !process.versions?.node) return "";
   try {
-    const { PDFParse } = await import("pdf-parse");
+    // Non-literal specifier keeps esbuild (OpenNext) from bundling this Node lib
+    const pkg = "pdf-parse";
+    const { PDFParse } = (await import(/* webpackIgnore: true */ pkg)) as typeof import("pdf-parse");
     const parser = new PDFParse({ data: new Uint8Array(buffer) });
     const result = await parser.getText();
     await parser.destroy();
@@ -154,16 +185,8 @@ async function extractWithText(text: string, fileName: string): Promise<Extracte
     return parseJSON(d.message?.content || "");
   }
 
-  // Anthropic
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 4096,
-    system: [{ type: "text", text: EXTRACTION_PROMPT, cache_control: { type: "ephemeral" } }],
-    messages: [{ role: "user", content: prompt }],
-  });
-  const text2 = response.content[0].type === "text" ? response.content[0].text : "";
-  return parseJSON(text2);
+  // Anthropic (fetch)
+  return parseJSON(await anthropicMessage(prompt));
 }
 
 // ─── Image vision extraction ──────────────────────────────────────────────────
@@ -221,42 +244,20 @@ async function extractWithVision(buffer: Buffer, mimeType: string, fileName: str
     return parseJSON(d.message?.content || "");
   }
 
-  // Anthropic vision
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 4096,
-    system: [{ type: "text", text: EXTRACTION_PROMPT, cache_control: { type: "ephemeral" } }],
-    messages: [{
-      role: "user",
-      content: [
-        { type: "image", source: { type: "base64", media_type: mimeType as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data: base64 } },
-        { type: "text", text: `File: ${fileName}\n\nExtract all financial data as JSON.` },
-      ],
-    }],
-  });
-  const t = response.content[0].type === "text" ? response.content[0].text : "";
-  return parseJSON(t);
+  // Anthropic vision (fetch)
+  return parseJSON(await anthropicMessage([
+    { type: "image", source: { type: "base64", media_type: mimeType, data: base64 } },
+    { type: "text", text: `File: ${fileName}\n\nExtract all financial data as JSON.` },
+  ]));
 }
 
 // ─── Anthropic native PDF (edge-safe, no renderer needed) ────────────────────
 async function extractPdfWithAnthropic(buffer: Buffer, fileName: string): Promise<ExtractedDocument> {
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
   const base64 = buffer.toString("base64");
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 4096,
-    system: [{ type: "text", text: EXTRACTION_PROMPT, cache_control: { type: "ephemeral" } }],
-    messages: [{
-      role: "user",
-      content: [
-        { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } } as Anthropic.DocumentBlockParam,
-        { type: "text", text: `File: ${fileName}\n\nExtract all financial data as JSON.` },
-      ],
-    }],
-  });
-  const t = response.content[0].type === "text" ? response.content[0].text : "";
-  return parseJSON(t);
+  return parseJSON(await anthropicMessage([
+    { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
+    { type: "text", text: `File: ${fileName}\n\nExtract all financial data as JSON.` },
+  ]));
 }
 
 // ─── Public entry point ───────────────────────────────────────────────────────
